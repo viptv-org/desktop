@@ -2,8 +2,13 @@
 //! native video engine attached. The DOM owns every visible control and
 //! overlay; `tauri-plugin-video` owns only the native playback surface, and
 //! the HTTP and opener plugins carry the backend transport and external
-//! sign-in links. All behavior beyond this registration lives in the
-//! shared frontend (`../src`).
+//! sign-in links. SmartCast TV pairing and LAN discovery stay native behind
+//! the `smartcast_*` commands (`smartcast.rs`, copied from
+//! core/adapters/tauri/smartcast.rs): TV credentials live in the OS keyring,
+//! never in the renderer or the Tauri store. All behavior beyond this
+//! registration lives in the shared frontend (`../src`).
+
+mod smartcast;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -11,6 +16,9 @@ pub fn run() {
         .plugin(tauri_plugin_video::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
+        // One app-wide SmartCast pairing session; the smartcast_* commands
+        // serialize on it while discovery stays lock-free.
+        .manage(smartcast::SmartCastState::default())
         .invoke_handler(tauri::generate_handler![
             test_autoplay_enabled,
             playback_engine_override,
@@ -19,7 +27,12 @@ pub fn run() {
             app_window_toggle_maximize,
             app_window_close,
             app_window_start_dragging,
-            app_window_toggle_fullscreen
+            app_window_toggle_fullscreen,
+            smartcast::smartcast_configure,
+            smartcast::smartcast_run,
+            smartcast::smartcast_cancel,
+            smartcast::smartcast_forget,
+            smartcast::smartcast_discover
         ])
         .run(tauri::generate_context!())
         .expect("error while running the VIPTV desktop app");

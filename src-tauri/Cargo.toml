@@ -30,14 +30,9 @@ tauri-plugin-opener = "2"
 
 # SmartCast host adapter (`src/smartcast.rs`, copied from core/adapters/tauri):
 # the protocol bridge comes from the sibling core crate and pairing
-# credentials stay in the OS keyring (Secret Service on Linux, platform
-# stores on Windows/macOS) — never in the Tauri store or the renderer.
-viptv-core = { path = "../../core/crates/viptv-core" }
-reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
-futures-util = "0.3"
-keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
+# SmartCast pairing and the native core bridge live in the integration crate.
+viptv-core-tauri = { path = "../../core/adapters/tauri" }
 tokio = { version = "1", features = ["rt", "sync", "macros"] }
-url = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

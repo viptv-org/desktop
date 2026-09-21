@@ -3,12 +3,13 @@
 //! overlay; `tauri-plugin-video` owns only the native playback surface, and
 //! the HTTP and opener plugins carry the backend transport and external
 //! sign-in links. SmartCast TV pairing and LAN discovery stay native behind
-//! the `smartcast_*` commands (`smartcast.rs`, copied from
-//! core/adapters/tauri/smartcast.rs): TV credentials live in the OS keyring,
-//! never in the renderer or the Tauri store. All behavior beyond this
-//! registration lives in the shared frontend (`../src`).
+//! the `smartcast_*` commands from the `viptv-core-tauri` integration crate:
+//! TV credentials live in the OS keyring, never in the renderer or the
+//! Tauri store. All behavior beyond this registration lives in the shared
+//! frontend (`../src`).
 
-mod smartcast;
+mod smartcast_discover;
+use viptv_core_tauri::smartcast;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -32,7 +33,7 @@ pub fn run() {
             smartcast::smartcast_run,
             smartcast::smartcast_cancel,
             smartcast::smartcast_forget,
-            smartcast::smartcast_discover
+            smartcast_discover::smartcast_discover
         ])
         .run(tauri::generate_context!())
         .expect("error while running the VIPTV desktop app");

@@ -5,7 +5,7 @@ The native Tauri v2 application for VIPTV on Linux, Windows, and macOS.
 The desktop client provides:
 - Native GStreamer / MPV / system video decoding via the sibling [`tauri-video-plugin`](../tauri-video-plugin) repository.
 - Frameless custom titlebar with Wayland & X11 edge-resize handlers, minimizing, maximizing, fullscreen toggle, and window dragging.
-- The shared viewing UI from [`tv-web`](../tv-web), loaded via Vite during dev (`http://localhost:5173`) and bundled from `tv-web/dist` in release builds.
+- The shared viewing UI from the pinned [`tv`](tv) submodule of [`tv-web`](../tv-web), loaded via Vite during dev (`http://localhost:5173`) and bundled from `tv/dist` in release builds. The gitlink is the promotion step: check out the reviewed tv-web commit in the submodule, commit the gitlink, and build — mirroring the backend's `tv` submodule discipline. A sibling `../tv-web` checkout remains useful for active development; release builds always consume the pin.
 - Native HTTP networking via `@tauri-apps/plugin-http` with system CA trust integration (`rustls-tls-native-roots`).
 
 ## Prerequisites
@@ -18,7 +18,7 @@ The desktop client provides:
     gstreamer1.0-dev gstreamer1.0-plugins-{base,good,bad,ugly} libmpv-dev
   ```
 - **Windows**: WebView2 and GStreamer runtime (see `../tauri-video-plugin/docs/windows.md`).
-- **Workspace layout**: The crate references `../tauri-video-plugin` and `../tv-web` as sibling path dependencies, so this repository builds inside the canonical `viptv-org` workspace.
+- **Workspace layout**: The crate references `../tauri-video-plugin` and the `tv` submodule as path dependencies, so this repository builds inside the canonical `viptv-org` workspace.
 
 ## Quick Start
 

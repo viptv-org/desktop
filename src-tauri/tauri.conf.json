@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "identifier": "tech.syek.viptv.desktop",
   "build": {
-    "beforeDevCommand": "npm run --prefix ../tv-web dev",
-    "beforeBuildCommand": "npm run --prefix ../tv-web build",
+    "beforeDevCommand": "npm run --prefix ../tv dev",
+    "beforeBuildCommand": "npm run --prefix ../tv build",
     "devUrl": "http://localhost:5173",
-    "frontendDist": "../tv-web/dist"
+    "frontendDist": "../tv/dist"
   },
   "app": {
     "withGlobalTauri": false,

@@ -4,11 +4,27 @@ on:
     branches: [main]
   pull_request:
 jobs:
+  # The shell's Rust path dependencies (../../core, ../../tauri-video-plugin)
+  # resolve inside the sibling checkout layout this repo lives in locally:
+  # check out that exact layout before building.
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: viptv-org/desktop
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: viptv-org/desktop
+      - uses: actions/checkout@v4
+        with:
+          repository: viptv-org/core
+          path: viptv-org/core
+      - uses: actions/checkout@v4
+        with:
+          repository: viptv-org/tauri-video-plugin
+          path: viptv-org/tauri-video-plugin
       - uses: dtolnay/rust-toolchain@stable
       - name: Install Linux media runtimes
         run: sudo apt-get update && sudo apt-get install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libmpv-dev ffmpeg libwebkit2gtk-4.1-dev libgtk-3-dev
@@ -22,15 +38,19 @@ jobs:
   ui:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: viptv-org/desktop
     steps:
       - uses: actions/checkout@v4
         with:
+          path: viptv-org/desktop
           submodules: recursive
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: tv/package-lock.json
+          cache-dependency-path: viptv-org/desktop/tv/package-lock.json
       - name: Pinned tv-web build (pin checks, typecheck, tests, bundle)
         run: |
           npm ci --prefix tv

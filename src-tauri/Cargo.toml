@@ -34,9 +34,13 @@ tauri-plugin-opener = "2"
 # The provider feature compiles the shared addon/provider bridge into the
 # native core so the desktop fat flavor keeps parity with the vendored wasm.
 viptv-core-tauri = { path = "../../core/adapters/tauri", features = ["provider"] }
-tokio = { version = "1", features = ["rt", "sync", "macros"] }
+# Direct SmartCast probe rules (candidate order + deviceinfo parsing) are
+# owned by the shared core; the desktop only executes the transport.
+viptv-core = { path = "../../core/crates/viptv-core", features = ["native"] }
+tokio = { version = "1", features = ["rt", "sync", "macros", "time", "net"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
 # The native playback engine lives in the sibling tauri-video-plugin repository
 # and is referenced by path, so this app builds only inside the viptv-org

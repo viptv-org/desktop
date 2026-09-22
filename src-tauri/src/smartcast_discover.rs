@@ -1,11 +1,22 @@
-//! Desktop-only SmartCast LAN discovery: a bounded SSDP M-SEARCH over
-//! `std::net` UDP that lists Vizio SmartCast TVs. One ephemeral socket owns
-//! the whole exchange, no pairing state or session lock is touched, every
-//! path is deadline-bounded, and discovery exposes network names only.
+//! Desktop-only SmartCast LAN discovery.
+//!
+//! The shared core defines the candidate contract (`vizio_discovery_candidates`:
+//! every host of a caller-approved /24, modern port 7345 then legacy 9000) and
+//! the identity rule (`vizio_deviceinfo_name`). This module executes it:
+//! every candidate gets a bounded TCP connect, and every answering host is
+//! asked for the unauthenticated `/state/device/deviceinfo` document that
+//! names real televisions. A bounded SSDP M-SEARCH still runs alongside as a
+//! secondary source, but multicast is filtered on many networks, so the
+//! direct probe is authoritative. No pairing state or session lock is
+//! touched, every path is deadline-bounded, and discovery exposes network
+//! names only.
 
 use serde::Serialize;
-use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket};
-use std::time::{Duration, Instant};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket};
+use std::time::Duration;
+use tokio::net::TcpStream;
+use tokio::sync::Semaphore;
+use tokio::time::timeout;
 
 // SSDP discovery: the desktop-only extension of the copied adapter. One
 // ephemeral UDP socket owns the whole exchange, no SmartCastState or session
@@ -28,10 +39,22 @@ const DISCOVERY_RESEND_AFTER: Duration = Duration::from_millis(1_000);
 /// distinct televisions, not their per-service SSDP replies.
 const DISCOVERY_LIMIT: usize = 16;
 
-#[derive(Serialize)]
-struct DiscoveredTv {
-    name: String,
-    host: String,
+// Direct probe: the authoritative source. Bounded by construction —
+// 508 candidates at 48 in flight and 350 ms each complete in under four
+// seconds, and only a port that actually answers is asked for deviceinfo.
+
+/// Per-candidate TCP connect ceiling; also bounds unreachable hosts, whose
+/// ARP resolution would otherwise stall for seconds.
+const PROBE_CONNECT: Duration = Duration::from_millis(350);
+/// Per-host deviceinfo request ceiling once the port answered.
+const PROBE_REQUEST: Duration = Duration::from_millis(1_500);
+/// Probe fan-out cap so one sweep cannot saturate the LAN interface.
+const PROBE_CONCURRENCY: usize = 48;
+
+#[derive(Serialize, Clone)]
+pub(crate) struct DiscoveredTv {
+    pub(crate) name: String,
+    pub(crate) host: String,
 }
 
 /// List Vizio SmartCast TVs on the local network as
@@ -39,13 +62,114 @@ struct DiscoveredTv {
 /// text; the renderer parses it and never learns more than network names.
 #[tauri::command]
 pub async fn smartcast_discover() -> Result<String, String> {
-    // The recv loop blocks, so it runs on the blocking pool: the async
-    // command merely parks, and every other invoke keeps flowing.
-    let discovered = tokio::task::spawn_blocking(discover_ssdp)
-        .await
-        .map_err(|_| "TV discovery stopped before finishing".to_owned())??;
+    // The direct probe is authoritative; SSDP failures (multicast filtering
+    // is common) must not hide probe results.
+    let (probed, ssdp) = tokio::join!(discover_by_probe(), async {
+        tokio::task::spawn_blocking(discover_ssdp)
+            .await
+            .unwrap_or_else(|_| Ok(Vec::new()))
+            .unwrap_or_default()
+    });
+    let discovered = merge_discovered(probed, ssdp);
     serde_json::to_string(&discovered)
         .map_err(|_| "Could not encode the discovered TV list".to_owned())
+}
+
+/// Probe every core-listed candidate of the default-route /24. The caller
+/// approves exactly one /24 (the interface the OS would route through), the
+/// same scope the shared core documents for mobile shells.
+async fn discover_by_probe() -> Vec<DiscoveredTv> {
+    let Some(prefix) = default_route_prefix() else {
+        return Vec::new();
+    };
+    let client = match reqwest::Client::builder()
+        .danger_accept_invalid_certs(true)
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+    {
+        Ok(client) => client,
+        Err(_) => return Vec::new(),
+    };
+    let semaphore = std::sync::Arc::new(Semaphore::new(PROBE_CONCURRENCY));
+    let candidates: Vec<String> = (1..=254u32)
+        .flat_map(|host| [7345, 9000].map(|port| format!("{prefix}.{host}:{port}")))
+        .collect();
+    let mut tasks = Vec::with_capacity(candidates.len());
+    for address in candidates {
+        let permit = semaphore
+            .clone()
+            .acquire_owned()
+            .await
+            .expect("the discovery semaphore is never closed");
+        let client = client.clone();
+        tasks.push(tokio::spawn(async move {
+            let _permit = permit;
+            probe_candidate(&client, &address).await
+        }));
+    }
+    let mut discovered: Vec<DiscoveredTv> = Vec::new();
+    for task in tasks {
+        if let Ok(Some(entry)) = task.await {
+            if !discovered.iter().any(|found| found.host == entry.host) {
+                discovered.push(entry);
+                if discovered.len() == DISCOVERY_LIMIT {
+                    break;
+                }
+            }
+        }
+    }
+    discovered
+}
+
+/// One candidate endpoint: a bounded TCP connect, then the unauthenticated
+/// deviceinfo document whose shape the shared core validates.
+async fn probe_candidate(client: &reqwest::Client, address: &str) -> Option<DiscoveredTv> {
+    let host = address.rsplit_once(':')?.0.to_owned();
+    let connected = timeout(PROBE_CONNECT, TcpStream::connect(address)).await.ok()?;
+    connected.ok()?;
+    let url = format!("https://{address}/state/device/deviceinfo");
+    let response = timeout(PROBE_REQUEST, client.get(&url).send()).await.ok()?.ok()?;
+    if !response.status().is_success() {
+        return None;
+    }
+    let body = timeout(PROBE_REQUEST, response.text()).await.ok()?.ok()?;
+    let name = viptv_core::vizio_deviceinfo_name(body)?;
+    let name = if name.is_empty() { "Vizio TV" } else { &name };
+    Some(DiscoveredTv {
+        name: format!("{name} ({host})"),
+        host,
+    })
+}
+
+/// The /24 prefix of the interface the OS routes through, derived without
+/// emitting a packet. Returns nothing when there is no usable route, which
+/// leaves SSDP as the only source.
+fn default_route_prefix() -> Option<String> {
+    let socket = UdpSocket::bind("0.0.0.0:0").ok()?;
+    // UDP connect only programs the routing decision; nothing is sent.
+    socket.connect("8.8.8.8:80").ok()?;
+    match socket.local_addr().ok()?.ip() {
+        IpAddr::V4(ip) => Some(subnet_prefix(&ip)),
+        IpAddr::V6(_) => None,
+    }
+}
+
+fn subnet_prefix(ip: &Ipv4Addr) -> String {
+    let octets = ip.octets();
+    format!("{}.{}.{}", octets[0], octets[1], octets[2])
+}
+
+/// Probe entries win over SSDP for the same host: the probe asked the TV for
+/// its own name, while SSDP reports a service string.
+fn merge_discovered(probed: Vec<DiscoveredTv>, ssdp: Vec<DiscoveredTv>) -> Vec<DiscoveredTv> {
+    let mut merged = probed;
+    for entry in ssdp {
+        if !merged.iter().any(|found| found.host == entry.host) {
+            merged.push(entry);
+        }
+    }
+    merged.truncate(DISCOVERY_LIMIT);
+    merged
 }
 
 fn discover_ssdp() -> Result<Vec<DiscoveredTv>, String> {
@@ -60,15 +184,15 @@ fn discover_ssdp() -> Result<Vec<DiscoveredTv>, String> {
         .map_err(|_| "Could not prepare the local TV search".to_owned())?;
     send_search(&socket, endpoint)
         .map_err(|_| "Could not send the TV search on the local network".to_owned())?;
-    let deadline = Instant::now() + DISCOVERY_WINDOW;
-    let resend_at = Instant::now() + DISCOVERY_RESEND_AFTER;
+    let deadline = std::time::Instant::now() + DISCOVERY_WINDOW;
+    let resend_at = std::time::Instant::now() + DISCOVERY_RESEND_AFTER;
     let mut resent = false;
     let mut buffer = [0u8; 4096];
     let mut discovered: Vec<DiscoveredTv> = Vec::new();
     // Non-blocking drain loop: WouldBlock and transient socket errors park
     // ~50ms, the deadline bounds every branch, and nothing here can panic.
-    while discovered.len() < DISCOVERY_LIMIT && Instant::now() < deadline {
-        if !resent && Instant::now() >= resend_at {
+    while discovered.len() < DISCOVERY_LIMIT && std::time::Instant::now() < deadline {
+        if !resent && std::time::Instant::now() >= resend_at {
             resent = true;
             let _ = send_search(&socket, endpoint);
         }
@@ -118,7 +242,10 @@ fn ssdp_response_tv(reply: &[u8], source: SocketAddr) -> Option<DiscoveredTv> {
         .and_then(vizio_segment)
         .filter(|segment| !segment.is_empty())
         .unwrap_or("Vizio TV");
-    Some(DiscoveredTv { name: format!("{name} ({host})"), host })
+    Some(DiscoveredTv {
+        name: format!("{name} ({host})"),
+        host,
+    })
 }
 
 /// Case-insensitive lookup of one `Name: value` header in an SSDP reply;
@@ -152,13 +279,57 @@ mod tests {
             let unbranded_server = ssdp_response_tv(b"HTTP/1.1 200 OK\r\nUSN: uuid:aa::vizio-smartcast\r\n\r\n", source).unwrap();
             assert_eq!(unbranded_server.name, "Vizio TV (192.0.2.50)");
         }
-    
-        #[test]
-        fn discovery_ignores_non_vizio_replies_and_multicast_noise() {
-            let source: SocketAddr = "192.0.2.51:1900".parse().unwrap();
-            assert!(ssdp_response_tv(b"HTTP/1.1 200 OK\r\nSERVER: Linux/3.4 UPnP/1.0\r\n\r\n", source).is_none());
-            assert!(ssdp_response_tv(b"NOTIFY * HTTP/1.1\r\nSERVER: VIZIO SmartCast\r\n\r\n", source).is_none());
-            assert!(ssdp_response_tv(b"\xff\xfe not text", source).is_none());
-            assert!(ssdp_response_tv(b"HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=1800\r\nLOCATION: http://192.0.2.51:4700/dd.xml\r\n\r\n", source).is_none());
+
+    #[test]
+    fn discovery_ignores_non_vizio_replies_and_multicast_noise() {
+        let source: SocketAddr = "192.0.2.51:1900".parse().unwrap();
+        assert!(ssdp_response_tv(b"HTTP/1.1 200 OK\r\nSERVER: Linux/3.4 UPnP/1.0\r\n\r\n", source).is_none());
+        assert!(ssdp_response_tv(b"NOTIFY * HTTP/1.1\r\nSERVER: VIZIO SmartCast\r\n\r\n", source).is_none());
+        assert!(ssdp_response_tv(b"\xff\xfe not text", source).is_none());
+        assert!(ssdp_response_tv(b"HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=1800\r\nLOCATION: http://192.0.2.51:4700/dd.xml\r\n\r\n", source).is_none());
+    }
+
+    #[test]
+    fn probe_results_win_the_name_for_a_host_ssdp_also_found() {
+        let probed = vec![DiscoveredTv {
+            name: "living room 65 (192.0.2.23)".into(),
+            host: "192.0.2.23".into(),
+        }];
+        let ssdp = vec![
+            DiscoveredTv {
+                name: "VIZIO SmartCast (192.0.2.23)".into(),
+                host: "192.0.2.23".into(),
+            },
+            DiscoveredTv {
+                name: "VIZIO SmartCast (192.0.2.9)".into(),
+                host: "192.0.2.9".into(),
+            },
+        ];
+        let merged = merge_discovered(probed, ssdp);
+        assert_eq!(merged.len(), 2);
+        assert_eq!(merged[0].name, "living room 65 (192.0.2.23)");
+        assert_eq!(merged[1].host, "192.0.2.9");
+    }
+
+    #[test]
+    fn subnet_prefix_drops_the_host_octet() {
+        assert_eq!(subnet_prefix(&"192.168.88.14".parse().unwrap()), "192.168.88");
+        assert_eq!(subnet_prefix(&"10.0.0.1".parse().unwrap()), "10.0.0");
+    }
+
+    /// Real-network check for this LAN: run with
+    /// `cargo test -- --ignored --nocapture` while a SmartCast TV is on.
+    #[test]
+    #[ignore = "executes a real LAN probe"]
+    fn real_lan_probe_finds_a_smartcast_tv() {
+        let found = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(discover_by_probe());
+        for entry in &found {
+            println!("{} {}", entry.name, entry.host);
         }
+        assert!(!found.is_empty(), "the probe found no SmartCast TVs");
+    }
 }

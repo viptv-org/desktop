@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "identifier": "tech.syek.viptv.desktop",
   "build": {
-    "beforeDevCommand": "VITE_VIPTV_LOCAL_MODE=1 npm run --prefix ../tv dev",
-    "beforeBuildCommand": "npm run --prefix ../tv build:fat",
+    "beforeDevCommand": "VITE_VIPTV_LOCAL_MODE=1 npm run --prefix tv dev",
+    "beforeBuildCommand": "npm run --prefix tv build:fat",
     "devUrl": "http://localhost:5173",
     "frontendDist": "../tv/dist"
   },

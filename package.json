@@ -2,6 +2,7 @@
   "name": "@viptv/desktop",
   "version": "0.1.0",
   "private": true,
+  "license": "GPL-2.0-only",
   "type": "module",
   "description": "VIPTV native desktop client for Linux, Windows, and macOS (Tauri v2)",
   "scripts": {

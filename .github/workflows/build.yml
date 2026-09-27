@@ -1,0 +1,94 @@
+name: Build desktop installers
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: desktop-build-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  installer:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+            bundles: deb,appimage
+          - os: windows-2022
+            platform: windows-x64
+            bundles: nsis
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+        working-directory: viptv-org/desktop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: viptv-org/desktop
+          submodules: recursive
+      - name: Read pinned native dependencies
+        id: pins
+        run: |
+          echo "core=$(python -c 'import json; print(json.load(open("NATIVE_REFS.json"))["core"])')" >> "$GITHUB_OUTPUT"
+          echo "video=$(python -c 'import json; print(json.load(open("NATIVE_REFS.json"))["tauri-video-plugin"])')" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: viptv-org/core
+          ref: ${{ steps.pins.outputs.core }}
+          path: viptv-org/core
+      - uses: actions/checkout@v4
+        with:
+          repository: viptv-org/tauri-video-plugin
+          ref: ${{ steps.pins.outputs.video }}
+          path: viptv-org/tauri-video-plugin
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            viptv-org/desktop/package-lock.json
+            viptv-org/desktop/tv/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libfuse2t64 libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libmpv-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav
+      - name: Windows playback runtimes
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/windows-runtime.ps1
+      - run: npm ci && npm ci --prefix tv
+      - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+      - name: Build Linux installers
+        if: runner.os == 'Linux'
+        run: npm run build -- --bundles deb,appimage
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
+        run: npm run build -- --bundles nsis --config src-tauri/tauri.windows.generated.json
+      - name: Collect installers and checksums
+        env:
+          BUILD_SHA: ${{ github.sha }}
+          BUILD_PLATFORM: ${{ matrix.platform }}
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,shutil
+          output=pathlib.Path('artifacts');output.mkdir(exist_ok=True)
+          root=pathlib.Path('src-tauri/target/release/bundle')
+          files=[p for p in root.rglob('*') if p.suffix in ['.deb','.AppImage','.exe']]
+          assert files,'No desktop installers produced'
+          for file in files: shutil.copy2(file,output/file.name)
+          (output/'SHA256SUMS').write_text(''.join(hashlib.sha256(f.read_bytes()).hexdigest()+'  '+f.name+'\n' for f in files))
+          (output/'build.json').write_text(json.dumps({'revision':os.environ['BUILD_SHA'],'platform':os.environ['BUILD_PLATFORM'],'native':json.loads(pathlib.Path('NATIVE_REFS.json').read_text())}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.platform }}-${{ github.sha }}
+          path: viptv-org/desktop/artifacts/*
+          if-no-files-found: error
+          retention-days: 30

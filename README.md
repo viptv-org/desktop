@@ -1,5 +1,10 @@
 # VIPTV Desktop Client
 
+[Installer build instructions](BUILDING.md). Actions delivery: main pushes and manual builds produce sideloading artifacts
+(Android universal APK; desktop Windows/Linux installers; Roku ZIP; TV WGT/IPK).
+Other repositories have no Actions workflows. Local checks remain; previous
+CI/release-publication descriptions below are historical. No automatic deploys.
+
 The native Tauri v2 application for VIPTV on Linux, Windows, and macOS.
 
 The desktop client provides:

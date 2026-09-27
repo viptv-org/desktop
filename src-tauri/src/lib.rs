@@ -13,6 +13,16 @@ use viptv_core_tauri::smartcast;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "windows")]
+    if let Ok(executable) = std::env::current_exe() {
+        if let Some(directory) = executable.parent() {
+            let plugins = directory.join("gstreamer-plugins");
+            if plugins.is_dir() {
+                std::env::set_var("GST_PLUGIN_SYSTEM_PATH_1_0", plugins);
+                std::env::set_var("GST_PLUGIN_SCANNER_1_0", directory.join("gstreamer-libexec/gstreamer-1.0/gst-plugin-scanner.exe"));
+            }
+        }
+    }
     tauri::Builder::default()
         .plugin(tauri_plugin_video::init())
         .plugin(tauri_plugin_http::init())

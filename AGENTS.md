@@ -1,5 +1,10 @@
 # VIPTV Desktop Agent Guide
 
+Delivery policy (owner approved 2026-09-27): only Android, desktop, Roku and TV-web
+build workflows remain, triggered by main pushes and manual dispatch. No PR
+gates, automatic releases, image publishing or deployment. Retain local checks.
+This supersedes older automation/release-gate instructions below.
+
 Read `DESIGN_REF` in the design repository before changing desktop app behavior. This repository owns the native desktop shell (Tauri v2) for Linux, Windows, and macOS.
 
 ## Architecture

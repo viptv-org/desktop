@@ -47,3 +47,10 @@ npm run test       # cargo test inside src-tauri
 Copyright (C) 2026 viptv contributors.
 
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2 of the License. See [LICENSE](LICENSE). The playback adapters (`viptv-org/video`, `viptv-org/tauri-video-plugin`) and the Android repository remain under their existing MIT OR Apache-2.0 terms.
+
+## Reconciled dependencies
+
+The `tv` gitlink pins the reconciled viewing client: React for this desktop
+shell, SolidTV for hosted TV URLs. `NATIVE_REFS.json` pins the sibling Rust core
+and video plugin revisions; CI checks out those exact commits. Update these
+pins together with the UI instead of building from unrelated branch tips.

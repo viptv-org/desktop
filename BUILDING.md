@@ -19,7 +19,10 @@ it still requires a compatible Linux kernel, graphics drivers and glibc (built
 on Ubuntu 24.04). Test launch and media on a clean machine; compilation alone
 does not prove portable hardware decoding.
 
-Local Linux build: `npm ci && npm ci --prefix tv && npm run test && npm run build -- --bundles deb,appimage`.
+Local Linux build: `npm ci && npm ci --prefix tv && npm run test && APPIMAGE_EXTRACT_AND_RUN=1 NO_STRIP=1 npm run build -- --bundles deb,appimage`.
+Extraction avoids requiring FUSE during packaging; NO_STRIP avoids the bundled
+linuxdeploy binutils rejecting newer ELF RELR sections. Rust still uses its
+normal release build profile.
 Windows: run the runtime preparation script, then
 `npm run build -- --bundles nsis --config src-tauri/tauri.windows.generated.json`.
 The preparation script expects RUNNER_TEMP, GITHUB_ENV and GITHUB_PATH as in

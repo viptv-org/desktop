@@ -67,6 +67,9 @@ jobs:
       - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
       - name: Build Linux installers
         if: runner.os == 'Linux'
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+          NO_STRIP: '1'
         run: npm run build -- --bundles deb,appimage
       - name: Build Windows installer
         if: runner.os == 'Windows'

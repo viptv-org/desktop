@@ -4,7 +4,10 @@ $gstVersion = '1.28.2'
 $gstUrl = "https://gstreamer.freedesktop.org/data/pkg/windows/$gstVersion/msvc/gstreamer-1.0-msvc-x86_64-$gstVersion.exe"
 $installer = Join-Path $env:RUNNER_TEMP 'gstreamer.exe'
 Invoke-WebRequest $gstUrl -OutFile $installer
-$expected = ((Invoke-WebRequest "$gstUrl.sha256sum").Content -split '\s+')[0]
+$checksum = Join-Path $env:RUNNER_TEMP 'gstreamer.sha256sum'
+Invoke-WebRequest "$gstUrl.sha256sum" -OutFile $checksum
+$expected = ((Get-Content $checksum -Raw).Trim() -split '\s+')[0]
+if ($expected -notmatch '^[0-9a-fA-F]{64}$') { throw 'Invalid GStreamer checksum document' }
 if ((Get-FileHash $installer -Algorithm SHA256).Hash -ne $expected) { throw 'GStreamer checksum mismatch' }
 $gst = Join-Path $env:RUNNER_TEMP 'gstreamer'
 $process = Start-Process $installer -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/TYPE=devel',"/DIR=$gst" -Wait -PassThru

@@ -57,6 +57,9 @@ jobs:
             viptv-org/desktop/package-lock.json
             viptv-org/desktop/tv/package-lock.json
       - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci && npm ci --prefix tv
+      - name: Verify pinned frontend before installing native SDKs
+        run: npm run design:check --prefix tv && npm run core:check --prefix tv && npm run video:check --prefix tv
       - name: Linux dependencies
         if: runner.os == 'Linux'
         run: |
@@ -66,7 +69,6 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/windows-runtime.ps1
-      - run: npm ci && npm ci --prefix tv
       - name: Build Linux installers
         if: runner.os == 'Linux'
         env:

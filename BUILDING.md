@@ -14,7 +14,7 @@ and embed Microsoft WebView2 154.0.4258.37. It verifies the GStreamer checksum
 and Microsoft runtime signature. This runtime candidate still needs a clean
 Windows machine and actual TextureStream playback qualification.
 
-NSIS uses zlib compression: the default LZMA spent over 15 minutes packaging
+NSIS uses zlib compression: the default LZMA spent 14 minutes 24 seconds packaging
 the bundled runtimes after native compilation had already finished. This trades
 some installer size for a shorter package build without omitting runtime files.
 

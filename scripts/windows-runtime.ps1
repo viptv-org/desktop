@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 # Pin both redistributables; never depend on the build runner's playback installation.
 $gstVersion = '1.28.2'
 $gstUrl = "https://gstreamer.freedesktop.org/data/pkg/windows/$gstVersion/msvc/gstreamer-1.0-msvc-x86_64-$gstVersion.exe"

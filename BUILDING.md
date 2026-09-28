@@ -14,6 +14,10 @@ and embed Microsoft WebView2 154.0.4258.37. It verifies the GStreamer checksum
 and Microsoft runtime signature. This runtime candidate still needs a clean
 Windows machine and actual TextureStream playback qualification.
 
+NSIS uses zlib compression: the default LZMA spent over 15 minutes packaging
+the bundled runtimes after native compilation had already finished. This trades
+some installer size for a shorter package build without omitting runtime files.
+
 Linux DEB declares media dependencies. AppImage includes the media framework;
 it still requires a compatible Linux kernel, graphics drivers and glibc (built
 on Ubuntu 24.04). Test launch and media on a clean machine; compilation alone

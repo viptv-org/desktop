@@ -1,3 +1,14 @@
+# BE-002 — raw live transport preparation, 2026-09-29
+
+The tv gitlink pins TV-web bf92331 and NATIVE_REFS.json pins matching core
+b75393e. Raw default/override cursor pages, exact live source and v2 guide API
+methods are available without adding UI or indexing a playlist. TV-web passed
+250 unit tests/build/typechecks and 32 trusted-HTTPS browser regressions.
+Ordinary Guide/Home live callers remain legacy until their cursor/lease cutover.
+The app is not deployed and no Windows/physical media claim is made.
+Linux cargo check and five shell tests passed; the existing real-device/media
+test remains ignored. This does not qualify an installed desktop surface.
+
 # BE-002 — v2 native playback promotion, 2026-09-29
 
 The tv gitlink pins TV-web 6ede3ca with active v2 VOD discovery/admission,

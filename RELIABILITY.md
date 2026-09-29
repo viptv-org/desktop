@@ -1,3 +1,18 @@
+# BE-002 — v2 native playback promotion, 2026-09-29
+
+The tv gitlink pins TV-web 6ede3ca with active v2 VOD discovery/admission,
+lease renewal/release and foreground authorization checks. NATIVE_REFS.json
+pins core 4418f1d and native video c7e4aa6. Required original-source headers
+reach the native transport; typed engine errors use safe messages.
+
+Local Linux cargo check and five shell tests passed (one existing real-device
+test ignored). TV-web passed 244 unit tests/build/typechecks, 32 trusted-HTTPS
+browser cases and SolidTV Home/player acceptance simulations. Native plugin
+passed 13 Linux tests, including real header-required HTTP MP4 decode/seek
+and a safe typed HTTP401 refusal. This is not installed-app surface, Windows,
+4K/HDR/DRM or physical-device qualification. Live remains legacy pending raw
+catalog migration. No installer publication or deployment occurred.
+
 # REL-001 — desktop promotion, 2026-09-28
 
 The TV-web gitlink promotes the tested error projection, Home layer recovery,

@@ -59,3 +59,10 @@ The `tv` gitlink pins the reconciled viewing client: React for this desktop
 shell, SolidTV for hosted TV URLs. `NATIVE_REFS.json` pins the sibling Rust core
 and video plugin revisions; CI checks out those exact commits. Update these
 pins together with the UI instead of building from unrelated branch tips.
+
+BE-002 adoption removes the unused anonymous provider feature from the native
+Core-Tauri dependency and imports its regenerated Core/WASM alongside the reviewed
+TV gitlink. Native authenticated playback, actual decoder constraints, SmartCast
+LAN networking and credential vaults remain. No historical local-addon records
+are imported into accounts or deleted. See LOCAL_RETIREMENT.md for exact pins and
+host-build evidence; installed/hardware and Windows qualification remain separate.

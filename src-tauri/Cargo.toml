@@ -28,12 +28,9 @@ tauri = { version = "2", features = [] }
 tauri-plugin-http = { version = "2", features = ["rustls-tls-native-roots", "unsafe-headers"] }
 tauri-plugin-opener = "2"
 
-# SmartCast host adapter (`src/smartcast.rs`, copied from core/adapters/tauri):
-# the protocol bridge comes from the sibling core crate and pairing
 # SmartCast pairing and the native core bridge live in the integration crate.
-# The provider feature compiles the shared addon/provider bridge into the
-# native core so the desktop fat flavor keeps parity with the vendored wasm.
-viptv-core-tauri = { path = "../../core/adapters/tauri", features = ["provider"] }
+# BE-002 retires anonymous addon/provider exports, not native SmartCast.
+viptv-core-tauri = { path = "../../core/adapters/tauri" }
 # Direct SmartCast probe rules (candidate order + deviceinfo parsing) are
 # owned by the shared core; the desktop only executes the transport.
 viptv-core = { path = "../../core/crates/viptv-core", features = ["native"] }

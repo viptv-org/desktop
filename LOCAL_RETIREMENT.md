@@ -47,7 +47,7 @@ The local Linux checkpoint above did not install/launch or qualify Windows.
 Real provider playback, physical SmartCast pairing, GPU/4K and portable
 clean-machine acceptance remain unqualified.
 
-## Hosted installer qualification
+## Historical hosted installer qualification at 54854cf
 
 Dispatched `build.yml` exactly once on published `refactor/backend-v2` at
 2026-09-30 08:34:40 UTC. Run
@@ -87,11 +87,12 @@ startup/pairing requests may have been attempted; this run is not proof of zero
 production-origin contact. No deployment, authenticated account/media test or
 production migration was performed by this qualification task.
 
-Future smoke-only proposal, not implemented in this run: keep the shipping build
-and its production origin unchanged, then fail-closed block outbound traffic for
-the installed native executable and bundled WebView2 executables before launch.
-Verify the temporary firewall rules are effective and clean up only those named
-rules in `finally`; if protection cannot be verified, refuse the smoke launch.
-Do not change `VITE_API_ORIGIN` in shipping artifacts merely to make a smoke test
-hermetic. Synthetic backend integration belongs to a separate loopback fixture
-test, not an expanded claim from this loader-survival check.
+That run and its install/launch result remain historical evidence only. Subsequent
+artifact-workflow cleanup removes the automatic client install/launch entirely;
+it does not rerun or newly qualify that smoke. The former firewall proposal is
+not implemented or needed for an artifact-only workflow. Shipping origin, runtime,
+UI and native pins are unchanged. Builds retain installer packaging, pinned
+frontend integrity, release native tests and checksummed uploads; they never
+launch the VIPTV client or its default origin. Separately authorized manual smoke
+remains documented in BUILDING.md. No workflow dispatch, network/client launch,
+new firewall infrastructure or production operation accompanied this cleanup.

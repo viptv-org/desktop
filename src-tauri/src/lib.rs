@@ -19,7 +19,10 @@ pub fn run() {
             let plugins = directory.join("gstreamer-plugins");
             if plugins.is_dir() {
                 std::env::set_var("GST_PLUGIN_SYSTEM_PATH_1_0", plugins);
-                std::env::set_var("GST_PLUGIN_SCANNER_1_0", directory.join("gstreamer-libexec/gstreamer-1.0/gst-plugin-scanner.exe"));
+                std::env::set_var(
+                    "GST_PLUGIN_SCANNER_1_0",
+                    directory.join("gstreamer-libexec/gstreamer-1.0/gst-plugin-scanner.exe"),
+                );
             }
         }
     }

@@ -125,10 +125,15 @@ async fn discover_by_probe() -> Vec<DiscoveredTv> {
 /// deviceinfo document whose shape the shared core validates.
 async fn probe_candidate(client: &reqwest::Client, address: &str) -> Option<DiscoveredTv> {
     let host = address.rsplit_once(':')?.0.to_owned();
-    let connected = timeout(PROBE_CONNECT, TcpStream::connect(address)).await.ok()?;
+    let connected = timeout(PROBE_CONNECT, TcpStream::connect(address))
+        .await
+        .ok()?;
     connected.ok()?;
     let url = format!("https://{address}/state/device/deviceinfo");
-    let response = timeout(PROBE_REQUEST, client.get(&url).send()).await.ok()?.ok()?;
+    let response = timeout(PROBE_REQUEST, client.get(&url).send())
+        .await
+        .ok()?
+        .ok()?;
     if !response.status().is_success() {
         return None;
     }
@@ -198,7 +203,9 @@ fn discover_ssdp() -> Result<Vec<DiscoveredTv>, String> {
         }
         match socket.recv_from(&mut buffer) {
             Ok((length, source)) => {
-                let Some(entry) = ssdp_response_tv(&buffer[..length], source) else { continue };
+                let Some(entry) = ssdp_response_tv(&buffer[..length], source) else {
+                    continue;
+                };
                 if !discovered.iter().any(|found| found.host == entry.host) {
                     discovered.push(entry);
                 }
@@ -269,22 +276,34 @@ fn vizio_segment(server: &str) -> Option<&str> {
 mod tests {
     use super::*;
 
-        #[test]
-        fn discovery_names_come_from_ssdp_headers_with_ip_fallback() {
-            let source: SocketAddr = "192.0.2.50:1900".parse().unwrap();
-            let branded = "HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=1800\r\nSERVER: Linux/2.6.18 UPnP/1.0 VIZIO SmartCast/19.0.4\r\nLOCATION: http://192.0.2.50:4700/device_description.xml\r\nUSN: uuid:5ec5a51e-8cb3-4c0d-8b1e-6d1c5d6b9f1a::urn:dial-multiscreen-org:service:dial:1\r\n\r\n";
-            let tv = ssdp_response_tv(branded.as_bytes(), source).unwrap();
-            assert_eq!(tv.host, "192.0.2.50");
-            assert_eq!(tv.name, "VIZIO SmartCast (192.0.2.50)");
-            let unbranded_server = ssdp_response_tv(b"HTTP/1.1 200 OK\r\nUSN: uuid:aa::vizio-smartcast\r\n\r\n", source).unwrap();
-            assert_eq!(unbranded_server.name, "Vizio TV (192.0.2.50)");
-        }
+    #[test]
+    fn discovery_names_come_from_ssdp_headers_with_ip_fallback() {
+        let source: SocketAddr = "192.0.2.50:1900".parse().unwrap();
+        let branded = "HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=1800\r\nSERVER: Linux/2.6.18 UPnP/1.0 VIZIO SmartCast/19.0.4\r\nLOCATION: http://192.0.2.50:4700/device_description.xml\r\nUSN: uuid:5ec5a51e-8cb3-4c0d-8b1e-6d1c5d6b9f1a::urn:dial-multiscreen-org:service:dial:1\r\n\r\n";
+        let tv = ssdp_response_tv(branded.as_bytes(), source).unwrap();
+        assert_eq!(tv.host, "192.0.2.50");
+        assert_eq!(tv.name, "VIZIO SmartCast (192.0.2.50)");
+        let unbranded_server = ssdp_response_tv(
+            b"HTTP/1.1 200 OK\r\nUSN: uuid:aa::vizio-smartcast\r\n\r\n",
+            source,
+        )
+        .unwrap();
+        assert_eq!(unbranded_server.name, "Vizio TV (192.0.2.50)");
+    }
 
     #[test]
     fn discovery_ignores_non_vizio_replies_and_multicast_noise() {
         let source: SocketAddr = "192.0.2.51:1900".parse().unwrap();
-        assert!(ssdp_response_tv(b"HTTP/1.1 200 OK\r\nSERVER: Linux/3.4 UPnP/1.0\r\n\r\n", source).is_none());
-        assert!(ssdp_response_tv(b"NOTIFY * HTTP/1.1\r\nSERVER: VIZIO SmartCast\r\n\r\n", source).is_none());
+        assert!(ssdp_response_tv(
+            b"HTTP/1.1 200 OK\r\nSERVER: Linux/3.4 UPnP/1.0\r\n\r\n",
+            source
+        )
+        .is_none());
+        assert!(ssdp_response_tv(
+            b"NOTIFY * HTTP/1.1\r\nSERVER: VIZIO SmartCast\r\n\r\n",
+            source
+        )
+        .is_none());
         assert!(ssdp_response_tv(b"\xff\xfe not text", source).is_none());
         assert!(ssdp_response_tv(b"HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=1800\r\nLOCATION: http://192.0.2.51:4700/dd.xml\r\n\r\n", source).is_none());
     }
@@ -313,7 +332,10 @@ mod tests {
 
     #[test]
     fn subnet_prefix_drops_the_host_octet() {
-        assert_eq!(subnet_prefix(&"192.168.88.14".parse().unwrap()), "192.168.88");
+        assert_eq!(
+            subnet_prefix(&"192.168.88.14".parse().unwrap()),
+            "192.168.88"
+        );
         assert_eq!(subnet_prefix(&"10.0.0.1".parse().unwrap()), "10.0.0");
     }
 

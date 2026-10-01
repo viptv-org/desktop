@@ -18,7 +18,7 @@ Qualification uses a new sibling workspace under
 root, shared worktrees, Android UI/generated files and production are untouched.
 The reviewed TV submodule is unmodified; no vendor/generated file was hand-edited.
 
-Run `npm run check`, `npm run test`, strict all-target Clippy and formatting,
+Run `npm run check`, `npm run test`, strict all-target Clippy, `cargo fmt --check`,
 then `npm test --prefix tv` and `npm run build --prefix tv`. The retained desktop
 suite includes five host tests and one explicitly ignored physical/interactive
 test; the frontend suite has 234 tests after retiring local-mode-only wrappers.
@@ -27,8 +27,11 @@ Build Linux installers with the documented
 Build results and artifact checksums are recorded in the review handoff.
 
 2026-09-30 qualification: native check, five host tests (one explicitly ignored),
-strict all-target Clippy/formatting, two Core-Tauri SmartCast adapter tests,
-234 frontend tests, integrity/typecheck and production frontend build passed.
+strict all-target Clippy, two Core-Tauri SmartCast adapter tests, 234 frontend
+tests, integrity/typecheck and production frontend build passed. Correction: the
+formatting check did not pass at that checkpoint (`lib.rs` and the
+`smartcast_discover.rs` test module were unformatted); `cargo fmt` was applied
+afterwards in a separate formatting-only commit.
 The workflow-equivalent release/custom-protocol host tests also passed five tests
 with the same physical/interactive test ignored.
 Linux release packaging produced both DEB and AppImage. Artifacts remain ignored

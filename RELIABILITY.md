@@ -1,5 +1,20 @@
-> Superseded by [LOCAL_RETIREMENT.md](LOCAL_RETIREMENT.md) for the current
-> desktop qualification state. The entries below are historical records.
+> The first entry below is the current pin record; earlier entries and
+> [LOCAL_RETIREMENT.md](LOCAL_RETIREMENT.md) are historical records.
+
+# Consumer re-pin, 2026-09-30
+
+The tv gitlink pins TV-web main `4ffc748` (Core `1f8483e`, video `514a332`).
+NATIVE_REFS.json pins core `1f8483e` and tauri-video-plugin `cfdb71d`, which
+adds the loopback HLS sanitizing proxy (protocol stays 1). The engine picker
+offers Auto plus only the engines `native_diagnostics` reports and migrates a
+stored engine this build lacks to Auto. The lockfile adds the plugin's proxy
+dependencies (`httpdate` is new; hyper, reqwest 0.12 and tokio were already present).
+
+Checks ran in a sibling scratch layout with core and the plugin at those
+exact commits: cargo fmt, clippy `-D warnings`, `npm run check` and
+`npm test` (6 passed, the real-device test ignored). TV-web passed 242 unit
+tests, the build and targeted single-worker browser specs. No installed desktop,
+Windows or real-media playback was exercised and nothing was deployed.
 
 # BE-002 — raw live transport preparation, 2026-09-29
 

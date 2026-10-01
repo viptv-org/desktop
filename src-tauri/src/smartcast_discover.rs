@@ -1,24 +1,26 @@
 //! Desktop-only SmartCast LAN discovery.
 //!
-//! The shared core defines the candidate contract (`vizio_discovery_candidates`:
-//! every host of a caller-approved /24, modern port 7345 then legacy 9000) and
-//! the identity rule (`vizio_deviceinfo_name`). This module executes it:
-//! every candidate gets a bounded TCP connect, and every answering host is
-//! asked for the unauthenticated `/state/device/deviceinfo` document that
-//! names real televisions. A bounded SSDP M-SEARCH still runs alongside as a
-//! secondary source, but multicast is filtered on many networks, so the
-//! direct probe is authoritative. No pairing state or session lock is
-//! touched, every path is deadline-bounded, and discovery exposes network
-//! names only.
+//! The shared core defines the candidate contract
+//! (`viptv_core::vizio::discovery_candidates`, exported as
+//! `vizio_discovery_candidates`: every host of a caller-approved /24, modern
+//! port 7345 then legacy 9000) and the identity rule
+//! (`vizio_deviceinfo_name`). This module executes it: every candidate gets a
+//! bounded TCP connect, and every answering host is asked for the
+//! unauthenticated `/state/device/deviceinfo` document that names real
+//! televisions. A bounded SSDP M-SEARCH still runs alongside as a secondary
+//! source, but multicast is filtered on many networks, so the direct probe is
+//! authoritative. No pairing state or session lock is touched, every path is
+//! deadline-bounded, and discovery exposes network names only.
 
 use serde::Serialize;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket};
 use std::time::Duration;
 use tokio::net::TcpStream;
-use tokio::sync::Semaphore;
+use tokio::task::JoinSet;
 use tokio::time::timeout;
 
-// SSDP discovery: the desktop-only extension of the copied adapter. One
+// SSDP discovery: a desktop-only secondary source beside the core-driven
+// probe; the `viptv-core-tauri` adapter has no SSDP path. One
 // ephemeral UDP socket owns the whole exchange, no SmartCastState or session
 // lock is touched, and every path is deadline-bounded, so the search can
 // never wedge pairing, remote, or window commands.
@@ -41,7 +43,8 @@ const DISCOVERY_LIMIT: usize = 16;
 
 // Direct probe: the authoritative source. Bounded by construction —
 // 508 candidates at 48 in flight and 350 ms each complete in under four
-// seconds, and only a port that actually answers is asked for deviceinfo.
+// seconds, only a port that actually answers is asked for deviceinfo, and
+// probes still running when the renderer-visible limit is met are aborted.
 
 /// Per-candidate TCP connect ceiling; also bounds unreachable hosts, whose
 /// ARP resolution would otherwise stall for seconds.
@@ -90,45 +93,64 @@ async fn discover_by_probe() -> Vec<DiscoveredTv> {
         Ok(client) => client,
         Err(_) => return Vec::new(),
     };
-    let semaphore = std::sync::Arc::new(Semaphore::new(PROBE_CONCURRENCY));
-    let candidates: Vec<String> = (1..=254u32)
-        .flat_map(|host| [7345, 9000].map(|port| format!("{prefix}.{host}:{port}")))
-        .collect();
-    let mut tasks = Vec::with_capacity(candidates.len());
-    for address in candidates {
-        let permit = semaphore
-            .clone()
-            .acquire_owned()
-            .await
-            .expect("the discovery semaphore is never closed");
-        let client = client.clone();
-        tasks.push(tokio::spawn(async move {
-            let _permit = permit;
-            probe_candidate(&client, &address).await
-        }));
-    }
-    let mut discovered: Vec<DiscoveredTv> = Vec::new();
-    for task in tasks {
-        if let Ok(Some(entry)) = task.await {
-            if !discovered.iter().any(|found| found.host == entry.host) {
-                discovered.push(entry);
+    let mut pending = probe_addresses(&prefix).into_iter().enumerate();
+    // The JoinSet owns every in-flight probe: its length is the fan-out cap,
+    // and dropping it aborts whatever is still running once the limit is met.
+    let mut probes = JoinSet::new();
+    let mut discovered: Vec<(usize, DiscoveredTv)> = Vec::new();
+    loop {
+        while probes.len() < PROBE_CONCURRENCY {
+            let Some((order, address)) = pending.next() else {
+                break;
+            };
+            let client = client.clone();
+            probes.spawn(async move { (order, probe_candidate(&client, &address).await) });
+        }
+        let Some(joined) = probes.join_next().await else {
+            break;
+        };
+        if let Ok((order, Some(entry))) = joined {
+            if !discovered.iter().any(|(_, found)| found.host == entry.host) {
+                discovered.push((order, entry));
                 if discovered.len() == DISCOVERY_LIMIT {
                     break;
                 }
             }
         }
     }
-    discovered
+    probes.abort_all();
+    // Probes finish in network order; present them in the core's order.
+    discovered.sort_by_key(|(order, _)| *order);
+    discovered.into_iter().map(|(_, entry)| entry).collect()
+}
+
+/// The core-owned candidate order for one /24 (every host, modern 7345 then
+/// legacy 9000) as connectable `host:port` addresses. A prefix the core
+/// rejects yields nothing to probe.
+fn probe_addresses(prefix: &str) -> Vec<String> {
+    viptv_core::vizio::discovery_candidates(prefix)
+        .map(|candidates| {
+            candidates
+                .into_iter()
+                .map(|candidate| candidate.host)
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// One candidate endpoint: a bounded TCP connect, then the unauthenticated
 /// deviceinfo document whose shape the shared core validates.
 async fn probe_candidate(client: &reqwest::Client, address: &str) -> Option<DiscoveredTv> {
     let host = address.rsplit_once(':')?.0.to_owned();
-    let connected = timeout(PROBE_CONNECT, TcpStream::connect(address)).await.ok()?;
+    let connected = timeout(PROBE_CONNECT, TcpStream::connect(address))
+        .await
+        .ok()?;
     connected.ok()?;
     let url = format!("https://{address}/state/device/deviceinfo");
-    let response = timeout(PROBE_REQUEST, client.get(&url).send()).await.ok()?.ok()?;
+    let response = timeout(PROBE_REQUEST, client.get(&url).send())
+        .await
+        .ok()?
+        .ok()?;
     if !response.status().is_success() {
         return None;
     }
@@ -198,7 +220,9 @@ fn discover_ssdp() -> Result<Vec<DiscoveredTv>, String> {
         }
         match socket.recv_from(&mut buffer) {
             Ok((length, source)) => {
-                let Some(entry) = ssdp_response_tv(&buffer[..length], source) else { continue };
+                let Some(entry) = ssdp_response_tv(&buffer[..length], source) else {
+                    continue;
+                };
                 if !discovered.iter().any(|found| found.host == entry.host) {
                     discovered.push(entry);
                 }
@@ -269,22 +293,34 @@ fn vizio_segment(server: &str) -> Option<&str> {
 mod tests {
     use super::*;
 
-        #[test]
-        fn discovery_names_come_from_ssdp_headers_with_ip_fallback() {
-            let source: SocketAddr = "192.0.2.50:1900".parse().unwrap();
-            let branded = "HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=1800\r\nSERVER: Linux/2.6.18 UPnP/1.0 VIZIO SmartCast/19.0.4\r\nLOCATION: http://192.0.2.50:4700/device_description.xml\r\nUSN: uuid:5ec5a51e-8cb3-4c0d-8b1e-6d1c5d6b9f1a::urn:dial-multiscreen-org:service:dial:1\r\n\r\n";
-            let tv = ssdp_response_tv(branded.as_bytes(), source).unwrap();
-            assert_eq!(tv.host, "192.0.2.50");
-            assert_eq!(tv.name, "VIZIO SmartCast (192.0.2.50)");
-            let unbranded_server = ssdp_response_tv(b"HTTP/1.1 200 OK\r\nUSN: uuid:aa::vizio-smartcast\r\n\r\n", source).unwrap();
-            assert_eq!(unbranded_server.name, "Vizio TV (192.0.2.50)");
-        }
+    #[test]
+    fn discovery_names_come_from_ssdp_headers_with_ip_fallback() {
+        let source: SocketAddr = "192.0.2.50:1900".parse().unwrap();
+        let branded = "HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=1800\r\nSERVER: Linux/2.6.18 UPnP/1.0 VIZIO SmartCast/19.0.4\r\nLOCATION: http://192.0.2.50:4700/device_description.xml\r\nUSN: uuid:5ec5a51e-8cb3-4c0d-8b1e-6d1c5d6b9f1a::urn:dial-multiscreen-org:service:dial:1\r\n\r\n";
+        let tv = ssdp_response_tv(branded.as_bytes(), source).unwrap();
+        assert_eq!(tv.host, "192.0.2.50");
+        assert_eq!(tv.name, "VIZIO SmartCast (192.0.2.50)");
+        let unbranded_server = ssdp_response_tv(
+            b"HTTP/1.1 200 OK\r\nUSN: uuid:aa::vizio-smartcast\r\n\r\n",
+            source,
+        )
+        .unwrap();
+        assert_eq!(unbranded_server.name, "Vizio TV (192.0.2.50)");
+    }
 
     #[test]
     fn discovery_ignores_non_vizio_replies_and_multicast_noise() {
         let source: SocketAddr = "192.0.2.51:1900".parse().unwrap();
-        assert!(ssdp_response_tv(b"HTTP/1.1 200 OK\r\nSERVER: Linux/3.4 UPnP/1.0\r\n\r\n", source).is_none());
-        assert!(ssdp_response_tv(b"NOTIFY * HTTP/1.1\r\nSERVER: VIZIO SmartCast\r\n\r\n", source).is_none());
+        assert!(ssdp_response_tv(
+            b"HTTP/1.1 200 OK\r\nSERVER: Linux/3.4 UPnP/1.0\r\n\r\n",
+            source
+        )
+        .is_none());
+        assert!(ssdp_response_tv(
+            b"NOTIFY * HTTP/1.1\r\nSERVER: VIZIO SmartCast\r\n\r\n",
+            source
+        )
+        .is_none());
         assert!(ssdp_response_tv(b"\xff\xfe not text", source).is_none());
         assert!(ssdp_response_tv(b"HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=1800\r\nLOCATION: http://192.0.2.51:4700/dd.xml\r\n\r\n", source).is_none());
     }
@@ -312,8 +348,21 @@ mod tests {
     }
 
     #[test]
+    fn probe_addresses_follow_the_core_candidate_order() {
+        let addresses = probe_addresses("192.0.2");
+        assert_eq!(addresses.len(), 508);
+        assert_eq!(addresses[0], "192.0.2.1:7345");
+        assert_eq!(addresses[1], "192.0.2.1:9000");
+        assert_eq!(addresses[507], "192.0.2.254:9000");
+        assert!(probe_addresses("not-a-subnet").is_empty());
+    }
+
+    #[test]
     fn subnet_prefix_drops_the_host_octet() {
-        assert_eq!(subnet_prefix(&"192.168.88.14".parse().unwrap()), "192.168.88");
+        assert_eq!(
+            subnet_prefix(&"192.168.88.14".parse().unwrap()),
+            "192.168.88"
+        );
         assert_eq!(subnet_prefix(&"10.0.0.1".parse().unwrap()), "10.0.0");
     }
 

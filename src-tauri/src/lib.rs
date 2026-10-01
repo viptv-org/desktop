@@ -6,7 +6,7 @@
 //! the `smartcast_*` commands from the `viptv-core-tauri` integration crate:
 //! TV credentials live in the OS keyring, never in the renderer or the
 //! Tauri store. All behavior beyond this registration lives in the shared
-//! frontend (`../src`).
+//! frontend (`../tv/src`).
 
 mod smartcast_discover;
 use viptv_core_tauri::smartcast;
@@ -19,7 +19,10 @@ pub fn run() {
             let plugins = directory.join("gstreamer-plugins");
             if plugins.is_dir() {
                 std::env::set_var("GST_PLUGIN_SYSTEM_PATH_1_0", plugins);
-                std::env::set_var("GST_PLUGIN_SCANNER_1_0", directory.join("gstreamer-libexec/gstreamer-1.0/gst-plugin-scanner.exe"));
+                std::env::set_var(
+                    "GST_PLUGIN_SCANNER_1_0",
+                    directory.join("gstreamer-libexec/gstreamer-1.0/gst-plugin-scanner.exe"),
+                );
             }
         }
     }
@@ -81,18 +84,28 @@ fn app_window_toggle_fullscreen(window: tauri::Window) -> Result<bool, String> {
     Ok(!current)
 }
 
+/// The developer test harness (autoplay, engine override, stdout log) only
+/// runs in debug builds. Release builds keep the three commands registered
+/// so the shared frontend's unconditional `test_log` calls still resolve,
+/// but they ignore the environment and print nothing.
+const HARNESS_ENABLED: bool = cfg!(debug_assertions);
+
 /// Harness switch: `VIPTV_TEST_AUTOPLAY=1` (or `true`) makes the webview
 /// autoplay the first playable title and mirror player snapshots to stdout,
-/// so a shell can watch real playback without driving the UI.
+/// so a shell can watch real playback without driving the UI. Always off in
+/// release builds.
 #[tauri::command]
 fn test_autoplay_enabled() -> bool {
-    autoplay_test_mode(std::env::var("VIPTV_TEST_AUTOPLAY").ok().as_deref())
+    HARNESS_ENABLED && autoplay_test_mode(std::env::var("VIPTV_TEST_AUTOPLAY").ok().as_deref())
 }
 
 /// `VIPTV_ENGINE=mpv|gstreamer|auto` overrides the persisted engine choice
-/// for this launch without rewriting it.
+/// for this launch without rewriting it. Debug builds only.
 #[tauri::command]
 fn playback_engine_override() -> Option<String> {
+    if !HARNESS_ENABLED {
+        return None;
+    }
     std::env::var("VIPTV_ENGINE")
         .ok()
         .map(|value| value.trim().to_owned())
@@ -100,10 +113,13 @@ fn playback_engine_override() -> Option<String> {
 }
 
 /// The harness's stdout channel; the shell prefixes every line so the
-/// output stays greppable regardless of webview logging.
+/// output stays greppable regardless of webview logging. A no-op in
+/// release builds.
 #[tauri::command]
 fn test_log(message: String) {
-    println!("[test] {message}");
+    if HARNESS_ENABLED {
+        println!("[test] {message}");
+    }
 }
 
 fn autoplay_test_mode(value: Option<&str>) -> bool {

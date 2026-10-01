@@ -9,7 +9,7 @@ The native Tauri v2 application for VIPTV on Linux, Windows, and macOS.
 
 The desktop client provides:
 - Native GStreamer / MPV / system video decoding via the sibling [`tauri-video-plugin`](../tauri-video-plugin) repository.
-- Frameless custom titlebar with Wayland & X11 edge-resize handlers, minimizing, maximizing, fullscreen toggle, and window dragging.
+- Frameless custom titlebar with Wayland & X11 edge-resize handles (frontend components in the `tv` submodule, `tv/src/ui/DesktopTitlebar.tsx` and `tv/src/ui/WindowResizeBorders.tsx`) backed by native minimize, maximize, fullscreen and window-dragging commands in `src-tauri/src/lib.rs`.
 - The shared viewing UI from the pinned [`tv`](tv) submodule of [`tv-web`](../tv-web), loaded via Vite during dev (`http://localhost:5173`) and bundled from `tv/dist` in release builds. The gitlink is the promotion step: check out the reviewed tv-web commit in the submodule, commit the gitlink, and build — mirroring the backend's `tv` submodule discipline. A sibling `../tv-web` checkout remains useful for active development; release builds always consume the pin.
 - Native HTTP networking via `@tauri-apps/plugin-http` with system CA trust integration (`rustls-tls-native-roots`).
 
@@ -59,3 +59,10 @@ The `tv` gitlink pins the reconciled viewing client: React for this desktop
 shell, SolidTV for hosted TV URLs. `NATIVE_REFS.json` pins the sibling Rust core
 and video plugin revisions; CI checks out those exact commits. Update these
 pins together with the UI instead of building from unrelated branch tips.
+
+BE-002 adoption removes the unused anonymous provider feature from the native
+Core-Tauri dependency and imports its regenerated Core/WASM alongside the reviewed
+TV gitlink. Native authenticated playback, actual decoder constraints, SmartCast
+LAN networking and credential vaults remain. No historical local-addon records
+are imported into accounts or deleted. See LOCAL_RETIREMENT.md for exact pins and
+host-build evidence; installed/hardware and Windows qualification remain separate.

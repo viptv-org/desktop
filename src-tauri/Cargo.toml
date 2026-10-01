@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "VIPTV desktop viewing app: the shared tv-web UI over the native video engine"
 authors = ["VIPTV contributors"]
 license = "GPL-2.0-only"
-repository = ""
+repository = "https://github.com/viptv-org/desktop"
 edition = "2021"
 rust-version = "1.85"
 
@@ -28,12 +28,9 @@ tauri = { version = "2", features = [] }
 tauri-plugin-http = { version = "2", features = ["rustls-tls-native-roots", "unsafe-headers"] }
 tauri-plugin-opener = "2"
 
-# SmartCast host adapter (`src/smartcast.rs`, copied from core/adapters/tauri):
-# the protocol bridge comes from the sibling core crate and pairing
 # SmartCast pairing and the native core bridge live in the integration crate.
-# The provider feature compiles the shared addon/provider bridge into the
-# native core so the desktop fat flavor keeps parity with the vendored wasm.
-viptv-core-tauri = { path = "../../core/adapters/tauri", features = ["provider"] }
+# BE-002 retires anonymous addon/provider exports, not native SmartCast.
+viptv-core-tauri = { path = "../../core/adapters/tauri" }
 # Direct SmartCast probe rules (candidate order + deviceinfo parsing) are
 # owned by the shared core; the desktop only executes the transport.
 viptv-core = { path = "../../core/crates/viptv-core", features = ["native"] }
@@ -44,7 +41,7 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 
 # The native playback engine lives in the sibling tauri-video-plugin repository
 # and is referenced by path, so this app builds only inside the viptv-org
-# checkout layout (see src-tauri/README.md).
+# checkout layout (see BUILDING.md).
 [target.'cfg(target_os = "linux")'.dependencies]
 tauri-plugin-video = { path = "../../tauri-video-plugin", features = ["gstreamer-runtime", "mpv-runtime"] }
 

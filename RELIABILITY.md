@@ -1,3 +1,6 @@
+> Superseded by [LOCAL_RETIREMENT.md](LOCAL_RETIREMENT.md) for the current
+> desktop qualification state. The entries below are historical records.
+
 # BE-002 — raw live transport preparation, 2026-09-29
 
 The tv gitlink pins TV-web bf92331 and NATIVE_REFS.json pins matching core

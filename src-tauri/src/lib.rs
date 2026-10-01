@@ -6,7 +6,7 @@
 //! the `smartcast_*` commands from the `viptv-core-tauri` integration crate:
 //! TV credentials live in the OS keyring, never in the renderer or the
 //! Tauri store. All behavior beyond this registration lives in the shared
-//! frontend (`../src`).
+//! frontend (`../tv/src`).
 
 mod smartcast_discover;
 use viptv_core_tauri::smartcast;

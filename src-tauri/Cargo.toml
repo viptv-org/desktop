@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "VIPTV desktop viewing app: the shared tv-web UI over the native video engine"
 authors = ["VIPTV contributors"]
 license = "GPL-2.0-only"
-repository = ""
+repository = "https://github.com/viptv-org/desktop"
 edition = "2021"
 rust-version = "1.85"
 
@@ -41,7 +41,7 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 
 # The native playback engine lives in the sibling tauri-video-plugin repository
 # and is referenced by path, so this app builds only inside the viptv-org
-# checkout layout (see src-tauri/README.md).
+# checkout layout (see BUILDING.md).
 [target.'cfg(target_os = "linux")'.dependencies]
 tauri-plugin-video = { path = "../../tauri-video-plugin", features = ["gstreamer-runtime", "mpv-runtime"] }
 

@@ -4,7 +4,7 @@ Thanks for your interest. VIPTV is a multi-repository product; this repository o
 
 ## Workflow
 
-1. Product behavior starts in [viptv-org/design](https://github.com/viptv-org/design). Read the pinned `DESIGN_REF` commit before changing app behavior.
+1. Product behavior starts in [viptv-org/design](https://github.com/viptv-org/design). Before changing app behavior, read the design-sync snapshot pinned by the `tv` submodule: `tv/DESIGN_REF` names the imported design revision and `tv/design-contract/` holds its copy.
 2. Search this repository's GitHub Issues before opening a new one.
 3. The UI is the pinned `tv` submodule of [viptv-org/tv-web](https://github.com/viptv-org/tv-web): advance the gitlink to a reviewed tv-web commit rather than editing anything under `tv/`. The local addon mode fat flavor is built with `VITE_VIPTV_LOCAL_MODE=1`.
 4. Never commit credentials, tokens or provider URLs.

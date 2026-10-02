@@ -236,3 +236,47 @@ remains ignored. TV-web's 221 tests and HTTPS Chromium fixture checks cover the
 UI/native-command boundary, not real SmartCast hardware or installed Windows
 playback. Windows/Linux installers are built by the existing Actions workflow;
 a dispatched build is not proof of successful installation or deployment.
+# Native recovery and close lifecycle, 2026-10-02
+
+The Linux desktop promotion pins TV-web `ea17334`, Core `f66c87e` and native
+video `d80d071`. These include bounded backend recovery, native seek
+confirmation, GTK surface allocation and Fit/Fill presentation, actual engine
+information, required MPV HTTP fields, and a renderer shutdown handshake.
+
+Closing the only window previously removed its chrome while leaving native
+playback and an audio stream alive. Both the custom Close command and a normal
+window CloseRequested now share one shutdown owner. The renderer releases its
+viewer lease before stopping the native player, then acknowledges cleanup.
+The host waits at most three seconds for that acknowledgement and dispatches
+engine cleanup on GTK's main thread. An independent 20-second watchdog is the
+total Linux exit fallback when GTK or a decoder blocks. It rechecks process
+identities before stopping only owned media helpers and terminates the owned
+app without running GTK exit handlers on the watchdog thread. Forced window
+destruction also starts this fallback; it cannot promise a renderer lease
+release after the renderer has already disappeared.
+
+The shutdown timings below were measured with TV-web `11e0de9`; `ea17334`
+changes responsive Home loading and Back restoration, retaining that shutdown
+and player contract. Its root-base frontend build also passed before adoption.
+
+Local qualification used a clean-source custom-protocol debug binary, trusted
+HTTPS, fresh synthetic account/profile/catalog data, and generated 150-second
+H.264 with silent AAC. A cfg(test)-only backend fixture admits the loopback
+addon; production source admission is unchanged. No production data or source
+credentials were used. The evidence is private and separated from the prior
+AppImage startup and browser-board checks below.
+
+| Scenario | Observed Linux result |
+|---|---|
+| GStreamer direct source | Required source fields reached the media server; decoded playback advanced. Pausing and forwarding 30 seconds landed at 32.2 seconds without the prior false seek failure. Playback Info reported GStreamer. |
+| MPV direct source | Before the header fix, Cookie and Referer were absent and no frame decoded. With the corrected production network seam, all required fields arrived, a fresh displayed source frame counter advanced and playback reached 150 seconds. |
+| Custom Close | Backend viewer-lease DELETE completed with 200; owned app exited with status zero and no owned audio stream remained. |
+| Window-manager Close (`ea17334`/`d80d071`) | KWin's real `closeWindow()` on the exact owned window released the viewer lease with DELETE 200, stopped the player and exited with status zero. The PID and owned audio streams were gone; this did not use X11 forced destruction. |
+| GTK-stalled close | With an opt-in debug-only 60-second native-close stall, backend DELETE completed in 0.183 seconds before GTK blocked. The watchdog exited the app in 20.104 seconds with status zero and no owned audio stream. |
+| Focused checks | Nine native tests passed, one real-LAN test remained ignored; strict Clippy and formatting passed. The source-matched frontend passed its root-base embedded asset check. |
+
+Fresh playing-overlay frame sampling, matched paused Fit/Fill/resize captures
+and MPV Info/seek are still being qualified.
+Cached or black captures do not establish those results. Windows/macOS,
+clean-machine installation, signing, physical SmartCast, HDR/DRM/UHD and live
+device playback remain explicit external qualification gates.

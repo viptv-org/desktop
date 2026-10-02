@@ -238,8 +238,8 @@ playback. Windows/Linux installers are built by the existing Actions workflow;
 a dispatched build is not proof of successful installation or deployment.
 # Native recovery and close lifecycle, 2026-10-02
 
-The Linux desktop promotion pins TV-web `11e0de9`, Core `f66c87e` and native
-video `848150c`. These include bounded backend recovery, native seek
+The Linux desktop promotion pins TV-web `ea17334`, Core `f66c87e` and native
+video `d80d071`. These include bounded backend recovery, native seek
 confirmation, GTK surface allocation and Fit/Fill presentation, actual engine
 information, required MPV HTTP fields, and a renderer shutdown handshake.
 
@@ -254,6 +254,10 @@ identities before stopping only owned media helpers and terminates the owned
 app without running GTK exit handlers on the watchdog thread. Forced window
 destruction also starts this fallback; it cannot promise a renderer lease
 release after the renderer has already disappeared.
+
+The shutdown timings below were measured with TV-web `11e0de9`; `ea17334`
+changes responsive Home loading and Back restoration, retaining that shutdown
+and player contract. Its root-base frontend build also passed before adoption.
 
 Local qualification used a clean-source custom-protocol debug binary, trusted
 HTTPS, fresh synthetic account/profile/catalog data, and generated 150-second

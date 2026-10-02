@@ -1,6 +1,44 @@
 > The first entry below is the current pin record; earlier entries and
 > [LOCAL_RETIREMENT.md](LOCAL_RETIREMENT.md) are historical records.
 
+# Remaining desktop board comparison, 2026-10-02
+
+This read-only browser pass used desktop `04a060919d1d3c50314c78656262a898c9926357`,
+its exact TV-web gitlink `e5789ab30361fba5816e0322bf3df98401604d75`, and an
+export of pinned design `4e153a7daca300389049e5fcfd5c3bc0af5edbee`. The preview
+harness mocked API/media boundaries, forced desktop chrome and fixed the clock.
+It ran sequentially at 1440×900. Captures and comparison sheets remained private.
+No backend account, production data or native media was used.
+
+Of 33 previously unaudited executable Desk scenarios, 32 reached their intended
+state and were visually inspected against the committed board. Reaching a state
+is not a pixel-parity assertion. DeskPlayerRestore timed out waiting for its
+restoration-failure message; its capture and behavior remain unqualified.
+DeskStates is a composite board, not an executable scenario. The prior report's
+named completed states comprise 13 distinct boards: together these passes have
+inspected 45 of the 47 Desk boards, with Restore and States explicitly separate.
+
+| Inspected boards | Observed result and limits |
+| --- | --- |
+| DeskSignIn, DeskProfilesPaged, DeskProfileEdit, DeskAvatars, DeskProfileDelete | Structure matches. Default avatar, catalog count, pointer/focus and previous-page disabled state differ with fixture/state. The existing missing per-profile lock badge also affects ProfilesPaged and still needs a design/backend decision. |
+| DeskLibrary, DeskLibraryCW | Empty and Continue Watching geometry matches; title/art content and hover/focus are fixture states. |
+| DeskAddons, DeskAddonInstall, DeskAddonManage, DeskAddonRemove | Group/list/dialog geometry and actions match; focus outlines and background selections differ with pointer/keyboard state. |
+| DeskDiscover, DeskDiscoverCatalog, DeskDiscoverFilter | Dropdown/filter popovers match their dedicated boards. The base DeskDiscover board still shows quick catalog tabs while the app uses a catalog dropdown; the dedicated catalog board and components specify the dropdown. Catalog rows and required/optional filters depend on fixture metadata. |
+| DeskPlayback, DeskEngine | Engine menu matches. Maximum quality is absent under BACKEND_V2's removal of profile quality caps; the engine section moves upward accordingly. Preferred languages are fixture preferences. |
+| DeskPin, DeskSignOut | Dialog structure matches. PIN is exercised through Sign out, so purpose copy differs. Accent colour and OLED background settings follow current component/decision rules, predating these boards. |
+| DeskCastSearch, DeskCastManual, DeskCastBusy, DeskCastPin, DeskCastRemote, DeskCastError | Pairing/recovery structures reached with synthetic native-command replies. Search completes immediately; pairing retains Change TV. Remote adds Power/Mute under the existing design decision, making its panel taller. No LAN discovery or TV commands were qualified. |
+| DeskItemMenu, DeskHidden | Right-click menu/removal modal and actions reached. Menu position follows the clicked card/pointer; the removed card and visible row differ with fixture queue state. |
+| DeskLiveDetails | Modal structure matches; channel counts/US labels/search copy intentionally follow BACKEND_V2 Guide cutover rather than the stale board. |
+| DeskPlayerAudio | Track panel structure matches; row highlighting and still-image framing are pointer/media-stub states. No actual track switch/decode. |
+| DeskPlayerError | Safe error/retry/source-selection dialog reached. Diagnostic details are collapsed until expanded; the board shows them expanded. Larger source fixture results alter the background list. |
+| DeskSources, DeskSourceProvider, DeskSourceDetails | Summary, source rows, provider popover and source-info dialog reached. The left title artwork crops taller than the reference, and the fixture has more rows/qualities; keep this visual discrepancy open for a focused layout review. |
+
+Real KDE Wayland/X11 display endpoints are available on this host. Existing local
+AppImages predate the reconciled UI pin or belong to older worktrees, so none was
+treated as a proven current installed candidate. The real-display window/chrome
+matrix, authenticated native playback, clean-machine checks and signing remain
+unverified. Nothing was installed or deployed in this pass.
+
 # Desktop parity pin and Linux package smoke, 2026-09-30
 
 The tv gitlink pins TV-web main `e5789ab` (design `4e153a7`, Core `1f8483e`,

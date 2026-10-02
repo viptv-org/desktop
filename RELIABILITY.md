@@ -1,6 +1,24 @@
 > The first entry below is the current pin record; earlier entries and
 > [LOCAL_RETIREMENT.md](LOCAL_RETIREMENT.md) are historical records.
 
+# Torrent source contract adoption, 2026-10-02
+
+The TV gitlink now pins reviewed TV-web `b576a383ec261dd4799f52e52456be065a943a39`
+and NATIVE_REFS pins its matching Core `c9e7bea8c0df4258e363bcd9141a38716904a6aa`.
+The imported design contract is `1742afa2b50d30638fa46f3abc8c1a76638a51e1`.
+Source-picker unsupported-format copy now allows the documented gateway-backed
+add-on torrent subset; discovery and playback still use opaque backend sources
+and existing authenticated HLS leases. Native peer traffic and a source-entry
+form are not added.
+
+The exact TV-web source passes its focused producer tests, production build,
+type checks and Core/design/video integrity checks. The desktop root-base
+frontend build and embedded-entry asset check pass. Cargo check and native
+tests pass in an isolated layout materialized from the exact Core/plugin pins.
+It is source adoption, not a new
+installer or native torrent-playback qualification. The manually qualified
+profile package in the next entry retains its historical pins.
+
 # Real-display native profile input, 2026-10-02
 
 A fresh run of the already qualified local-origin AppImage used disposable

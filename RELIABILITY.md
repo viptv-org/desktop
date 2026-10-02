@@ -1,6 +1,46 @@
 > The first entry below is the current pin record; earlier entries and
 > [LOCAL_RETIREMENT.md](LOCAL_RETIREMENT.md) are historical records.
 
+# Real-display native profile input, 2026-10-02
+
+A fresh run of the already qualified local-origin AppImage used disposable
+XDG configuration/data/cache directories, a newly initialized synthetic SQLite
+database and the real local backend at
+`a85df000734c0938d9bab8b19dbac24036878cf7`. Loopback HTTPS health returned 200
+with trusted TLS. No previous account/catalog fixture or production data was
+imported. The runtime package was reused, not rebuilt: SHA-256
+`03ee9dd54adde70a69b30f4ba43aaba844d8d9aece026cc18ff21ed6484cf7ef`, desktop
+reviewed source `5fcc6c7` (merged main `a8abcf2`), TV-web
+`e5789ab30361fba5816e0322bf3df98401604d75`, design
+`4e153a7daca300389049e5fcfd5c3bc0af5edbee`, Core
+`1f8483e365867f99eb39928cd7f3a23920003515` and native video
+`cfdb71da760e4519a4b5a52da17cb62e90d2780f`.
+
+The AppImage ran on the host's real KDE Wayland/XWayland desktop. Native
+accessibility activation opened device sign-in; a fresh synthetic account
+approved pairing through the actual backend. Add profile then opened Profile
+name. Manual real-display typing of a synthetic name, Done and Create profile
+completed successfully: the new profile appeared in Who's watching, and the
+real backend profiles response independently confirmed the persisted name.
+This qualifies rendered native profile creation and actual input for that
+bounded flow. It supplies no measured screen/reference parity, window-chrome,
+fullscreen, source selection or native decoder evidence.
+
+Native accessibility reported the input editable/focused, but exposed no
+EditableText interface; X11 and accessibility keyboard synthesis did not enter
+text. The successful manual flow distinguishes this automation limitation from
+an application typing defect. Captures, synthetic session credentials and raw
+accessibility/API evidence stay outside Git.
+
+Local media was not admitted in this run. The backend's configured-source
+transport rejects loopback/private addon/provider destinations; its fixture
+loopback allowance is compiled only for tests. Generated loopback media through
+normal production admission therefore needs a dedicated integration fixture.
+No transport protection was weakened to make this check pass. Authenticated
+GStreamer/MPV decode/seek and the full installed Desk matrix remain open in
+[desktop#4](https://github.com/viptv-org/desktop/issues/4) and
+[design#3](https://github.com/viptv-org/design/issues/3).
+
 # Packaged frontend startup repair, 2026-10-02
 
 The native package could not finish frontend startup for three independent

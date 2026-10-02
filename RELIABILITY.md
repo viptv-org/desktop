@@ -271,11 +271,12 @@ AppImage startup and browser-board checks below.
 | GStreamer direct source | Required source fields reached the media server; decoded playback advanced. Pausing and forwarding 30 seconds landed at 32.2 seconds without the prior false seek failure. Playback Info reported GStreamer. |
 | MPV direct source | Before the header fix, Cookie and Referer were absent and no frame decoded. With the corrected production network seam, all required fields arrived, a fresh displayed source frame counter advanced and playback reached 150 seconds. |
 | Custom Close | Backend viewer-lease DELETE completed with 200; owned app exited with status zero and no owned audio stream remained. |
+| Window-manager Close (`ea17334`/`d80d071`) | KWin's real `closeWindow()` on the exact owned window released the viewer lease with DELETE 200, stopped the player and exited with status zero. The PID and owned audio streams were gone; this did not use X11 forced destruction. |
 | GTK-stalled close | With an opt-in debug-only 60-second native-close stall, backend DELETE completed in 0.183 seconds before GTK blocked. The watchdog exited the app in 20.104 seconds with status zero and no owned audio stream. |
 | Focused checks | Nine native tests passed, one real-LAN test remained ignored; strict Clippy and formatting passed. The source-matched frontend passed its root-base embedded asset check. |
 
-Fresh playing-overlay frame sampling, matched paused Fit/Fill/resize captures,
-MPV Info/seek and ordinary window-manager Close are still being qualified.
+Fresh playing-overlay frame sampling, matched paused Fit/Fill/resize captures
+and MPV Info/seek are still being qualified.
 Cached or black captures do not establish those results. Windows/macOS,
 clean-machine installation, signing, physical SmartCast, HDR/DRM/UHD and live
 device playback remain explicit external qualification gates.

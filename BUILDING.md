@@ -30,6 +30,11 @@ Local Linux build: `npm ci && npm ci --prefix tv && npm run test && APPIMAGE_EXT
 Extraction avoids requiring FUSE during packaging; NO_STRIP avoids the bundled
 linuxdeploy binutils rejecting newer ELF RELR sections. Rust still uses its
 normal release build profile.
+The desktop frontend wrapper overrides TV-web's hosted `/tv/` asset base with
+`/`, then verifies that the entry's script and preload URLs exist in
+`frontendDist`. Run `npm run check:frontend` to repeat this check on a built UI.
+The native CSP permits Core WebAssembly compilation and same-origin fetches;
+missing either permission prevents the packaged app from completing startup.
 Windows: run the runtime preparation script, then
 `npm run build -- --bundles nsis --config src-tauri/tauri.windows.generated.json`.
 The preparation script expects RUNNER_TEMP, GITHUB_ENV and GITHUB_PATH as in

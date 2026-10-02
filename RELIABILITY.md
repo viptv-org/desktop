@@ -1,6 +1,64 @@
 > The first entry below is the current pin record; earlier entries and
 > [LOCAL_RETIREMENT.md](LOCAL_RETIREMENT.md) are historical records.
 
+# Packaged frontend startup repair, 2026-10-02
+
+The native package could not finish frontend startup for three independent
+reasons: its entry requested hosted `/tv/assets/...` URLs absent from the
+embedded root, its CSP prohibited Core WebAssembly compilation, and its
+`connect-src` excluded the native origin from which Core fetches its WASM.
+The desktop build wrapper now builds with `--base /` and checks the entry's
+script/preload files before packaging. The CSP permits `'wasm-unsafe-eval'`
+and same-origin fetches. The reviewed TV-web source and gitlink are unchanged.
+
+Diagnosis used shell baseline `04a060919d1d3c50314c78656262a898c9926357`
+plus this change, TV-web `e5789ab30361fba5816e0322bf3df98401604d75`, design
+`4e153a7daca300389049e5fcfd5c3bc0af5edbee`, and both exact NATIVE_REFS pins.
+Vite 6 public-base documentation and Tauri v2 CSP documentation were fetched
+through Context7 before configuration changes.
+
+The regression check failed against the original built entry with
+`Desktop entry asset is missing from frontendDist: /tv/assets/app-DocpYtAc.js`.
+After the root-base change, the same check passed, but native startup displayed
+`viptv could not load. Please reload the app.` A trusted local HTTPS replay
+using the exact native CSP reproduced a WebAssembly `CompileError`. Adding
+the WASM permission alone made that replay reach Sign in; the native app
+needed `connect-src 'self'` as well before reaching its account sign-in DOM.
+These are frontend boot results, not proof that native pixels render correctly.
+
+The Linux AppImage was freshly rebuilt with two Cargo jobs, extraction enabled
+and NO_STRIP. Qualification explicitly compiled
+`VITE_API_ORIGIN=https://viptv.local.test:8443`, then launched using disposable
+XDG config/data/cache directories. The real backend was rebuilt at clean
+`a85df000734c0938d9bab8b19dbac24036878cf7`; it used a newly initialized local
+SQLite database, a synthetic account and a loopback-only TLS proxy. Health
+returned HTTP 200 with SSL verification result 0. No production data or
+production endpoint was used. Nothing was installed or deployed.
+
+| Scope | Functional evidence and limit |
+| --- | --- |
+| Fresh corrected AppImage startup | Native WebKit accessibility tree reached account sign-in, including Continue in browser and Use another device. The original package had an empty document. |
+| Device sign-in | Use another device opened the code/QR state; the fresh local account approved the pairing through the real backend API. Native token polling reached Who's watching. Browser-opener interaction was not exercised. |
+| Session persistence and profile selection | Relaunching the corrected AppImage retained the local session. A synthetic profile created through the backend API appeared and could be selected; the native Home navigation/search chrome appeared. The account had no catalog sources. |
+| Profile dialogs | Native accessibility activation reached Add a profile and its text-entry dialog. Profile creation/editing by native keyboard or pointer remains unqualified; the accessibility bridge offered no EditableText interface and window-targeted keyboard injection did not enter text. |
+| Settings | The same corrected release binary with system GTK/WebKit libraries reached Settings, Appearance and Playback preferences through native accessibility actions, including the device playback-engine row. This additional scope is direct-binary evidence, not AppImage or decoder evidence. |
+| Real display/pixels | KDE KWin 6.7.5 runs Wayland. The AppImage GTK hook forces X11 even when `GDK_BACKEND=wayland` is requested. Its owned XWayland window remained unmapped; X11 pixel capture failed. KWin's direct capture API refused an unauthorized caller. Spectacle captures were flat black/gray, and a system-library native Wayland launch was not confirmed active. No rendered screen, pointer/focus, edge resize, fullscreen or window-control claim follows. |
+
+The corrected local-origin AppImage SHA-256 is
+`03ee9dd54adde70a69b30f4ba43aaba844d8d9aece026cc18ff21ed6484cf7ef`.
+Private package, diagnostic replay, accessibility evidence and captures were
+kept outside the repositories. Final `npm run check` and `npm run test` passed
+(six native tests, one existing interactive/media test ignored); the frontend
+build passed its design/Core/video integrity checks and all TypeScript groups,
+and the entry-asset regression check passed. Final AppImage packaging succeeded.
+
+Still open: the complete installed Desk scenario matrix and real-display
+rendering/input; authenticated GStreamer/MPV playback, Title/source selection,
+Resume/Next, tracks, queue/history and their cancellation/return-focus checks;
+clean-machine portability, Windows, macOS and signing. The existing board and
+profile-lock gaps below remain. Startup progress does not close desktop#4 or
+design#3.
+
 # Remaining desktop board comparison, 2026-10-02
 
 This read-only browser pass used desktop `04a060919d1d3c50314c78656262a898c9926357`,

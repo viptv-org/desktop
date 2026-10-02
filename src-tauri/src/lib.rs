@@ -8,6 +8,8 @@
 //! Tauri store. All behavior beyond this registration lives in the shared
 //! frontend (`../tv/src`).
 
+#[cfg(target_os = "linux")]
+mod appimage_runtime;
 mod shutdown;
 mod smartcast_discover;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -55,6 +57,8 @@ fn app_shutdown_ready(state: tauri::State<'_, ShutdownState>) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "linux")]
+    appimage_runtime::configure();
     #[cfg(target_os = "windows")]
     if let Ok(executable) = std::env::current_exe() {
         if let Some(directory) = executable.parent() {

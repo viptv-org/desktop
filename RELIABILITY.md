@@ -280,3 +280,33 @@ and MPV Info/seek are still being qualified.
 Cached or black captures do not establish those results. Windows/macOS,
 clean-machine installation, signing, physical SmartCast, HDR/DRM/UHD and live
 device playback remain explicit external qualification gates.
+# Fresh Linux AppImage runtime, 2026-10-02
+
+The release AppImage built from desktop `0e044ed`, TV-web `ea17334`, Core
+`f66c87e` and native video `d80d071` uses the explicit local HTTPS QA origin.
+Its SHA256 is
+`e8412eaa7e3cd479ea063832ee5cd1e0283f146834d10d26b5d0d8b61de25daf`.
+This is a local qualification artifact, not a normal production-origin build,
+clean-machine install or signing result.
+
+The prior source-pinned AppImage restored the synthetic account/profile,
+admitted an authenticated direct H.264/silent-AAC source and advanced native
+progress through 150 seconds. It repeatedly warned that the external GStreamer
+plugin loader failed: linuxdeploy's generated hook pointed at a nested path,
+while the bundled scanner actually existed beside the plugins. Linux startup
+now selects that existing file from APPDIR before GStreamer initialization.
+Missing bundled helpers retain the host configuration.
+
+The corrected AppImage launched with a fresh media cache, restored the same
+synthetic device session and catalog, and admitted the source through POST/POLL
+200 and playback 202/ready 200. Required source fields arrived unchanged;
+native progress advanced through 89.7 seconds, a silent owned audio stream was
+present, and a fresh GStreamer registry was created. Its runtime stderr remained
+empty, including no external-loader warning. Custom Close released the lease
+with DELETE 200, exited with status zero and retired the owned process/audio.
+Eleven native tests pass, one real-LAN test remains ignored, and strict Clippy,
+formatting and embedded root-base frontend checks pass.
+
+This establishes this host's actual package startup, transport/progress and
+close path. Native pixels, playing-overlay stability, matched Fit/Fill/resize
+and MPV Info/seek remain separate pending interaction/capture checks.

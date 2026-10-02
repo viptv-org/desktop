@@ -239,7 +239,7 @@ a dispatched build is not proof of successful installation or deployment.
 # Native recovery and close lifecycle, 2026-10-02
 
 The Linux desktop promotion pins TV-web `11e0de9`, Core `f66c87e` and native
-video `46e5422`. These include bounded backend recovery, native seek
+video `848150c`. These include bounded backend recovery, native seek
 confirmation, GTK surface allocation and Fit/Fill presentation, actual engine
 information, required MPV HTTP fields, and a renderer shutdown handshake.
 

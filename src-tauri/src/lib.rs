@@ -8,8 +8,50 @@
 //! Tauri store. All behavior beyond this registration lives in the shared
 //! frontend (`../tv/src`).
 
+mod shutdown;
 mod smartcast_discover;
+use std::sync::atomic::{AtomicBool, Ordering};
+use tauri::{Emitter, Manager};
+use tauri_plugin_video::VideoExt;
 use viptv_core_tauri::smartcast;
+
+#[derive(Default)]
+struct ShutdownState {
+    started: AtomicBool,
+    renderer_ready: tokio::sync::Notify,
+}
+
+fn begin_shutdown(app: tauri::AppHandle) {
+    if app
+        .state::<ShutdownState>()
+        .started
+        .swap(true, Ordering::AcqRel)
+    {
+        return;
+    }
+    shutdown::start_watchdog();
+    let _ = app.emit("app-shutdown-requested", ());
+    tauri::async_runtime::spawn(async move {
+        let _ = tokio::time::timeout(
+            std::time::Duration::from_secs(3),
+            app.state::<ShutdownState>().renderer_ready.notified(),
+        )
+        .await;
+        tauri::async_runtime::spawn_blocking(move || {
+            if app.video().shutdown_native().is_err() {
+                eprintln!("Native playback cleanup could not finish during shutdown.");
+            }
+            app.exit(0);
+        });
+    });
+}
+
+#[tauri::command]
+fn app_shutdown_ready(state: tauri::State<'_, ShutdownState>) {
+    if state.started.load(Ordering::Acquire) {
+        state.renderer_ready.notify_one();
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -27,6 +69,20 @@ pub fn run() {
         }
     }
     tauri::Builder::default()
+        .manage(ShutdownState::default())
+        .on_window_event(|window, event| {
+            if window.label() != "main" {
+                return;
+            }
+            match event {
+                tauri::WindowEvent::CloseRequested { api, .. } => {
+                    api.prevent_close();
+                    begin_shutdown(window.app_handle().clone());
+                }
+                tauri::WindowEvent::Destroyed => begin_shutdown(window.app_handle().clone()),
+                _ => {}
+            }
+        })
         .plugin(tauri_plugin_video::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
@@ -40,6 +96,7 @@ pub fn run() {
             app_window_minimize,
             app_window_toggle_maximize,
             app_window_close,
+            app_shutdown_ready,
             app_window_start_dragging,
             app_window_toggle_fullscreen,
             smartcast::smartcast_configure,

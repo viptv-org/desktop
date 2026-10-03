@@ -1,7 +1,7 @@
 # Linux desktop playback controls — 2026-10-03
 
-This adoption pins TV-web `db6e1471e684605b9fd8779ef11c42c5282a801e`, Video
-`bf296cfacbde25c354acb51e609787661fda2727`, native plugin
+This adoption pins TV-web `098f4b1364881bff6e7cc496ddefa347bb42127e`, Video
+`9429307450cd7e7d856f57f14272acb9e4566113`, native plugin
 `c41a5037c664135616b0ea60a2715480e2172df2` and Core
 `f66c87e13a2c93b6dad3234da9694c57f8530b0a`. The sibling native source archives were
 materialized from the committed pins for the desktop build.
@@ -28,7 +28,7 @@ aperture masking, and bare-picture taps reveal controls through the screen.
 - A separate silent fixture checks alternate audio, actual rendered subtitle
   pixel changes, subtitle removal, volume and picture controls on both engines.
   The final run took 4.7 seconds. Controls must return within 250 ms.
-- Video: 38 focused adapter/compositor checks pass. TV-web: 24 focused UI,
+- Video: 41 focused adapter/compositor checks pass. TV-web: 24 focused UI,
   preference, input and shutdown checks pass. Its production build passes
   strict type checks and design/Core/video integrity.
 - Desktop: 11 native shell tests pass; the real LAN probe is excluded.
@@ -71,3 +71,20 @@ as a source failure, then decode and control valid media in the same engine
 on the local desktop display (4.7 seconds). Real-provider controls also pass
 on that display with both engines (8.5 seconds). These results do not claim
 that every configured provider is available or that every video now plays.
+
+## Volume slider responsiveness follow-up
+
+Native volume updates publish the latest requested level immediately and allow
+only one volume command in flight. Intermediate drag samples are replaced by
+the latest value, avoiding a queue of stale audio commands. Acknowledgements
+do not trigger duplicate UI publications or overwrite current playback facts.
+Mute uses the same ordered path; a retired source cannot block the new slider
+or publish its late failure.
+
+41 focused adapter/compositor checks pass. The held-IPC regression changes
+volume 100 times: native requests decrease from 100 to two while the requested
+level stays immediate. Mute ordering and source replacement also pass. Four
+focused React feedback/control checks pass, including 26 slider changes with
+pending IPC and immediate input/knob updates. Audio-device latency is not
+measured by these boundary tests. Strict type checks, vendor integrity and the
+production frontend build pass.

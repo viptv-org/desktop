@@ -1,10 +1,10 @@
 # Linux desktop playback controls — 2026-10-03
 
-This adoption pins TV-web `31a9943dc893cb13bef6beced0afef46312ec17f`, Video
-`e30f6af29ce68aafa2bc1a8a5f2d5075803cb558`, native plugin
-`4f1fd390da8db9ebde6634a55f98ba38f666cd96` and Core
+This adoption pins TV-web `db6e1471e684605b9fd8779ef11c42c5282a801e`, Video
+`bf296cfacbde25c354acb51e609787661fda2727`, native plugin
+`c41a5037c664135616b0ea60a2715480e2172df2` and Core
 `f66c87e13a2c93b6dad3234da9694c57f8530b0a`. The sibling native source archives were
-compared byte-for-byte with the committed pins before building.
+materialized from the committed pins for the desktop build.
 
 GStreamer engine transitions, seeks, stream selection and timing queries run
 on a serialized worker so GTK remains available for input and presentation.
@@ -20,7 +20,7 @@ aperture masking, and bare-picture taps reveal controls through the screen.
 
 ## Evidence
 
-- Native plugin: 43 ordinary checks pass; two opt-in checks are excluded from
+- Native plugin: 45 ordinary checks pass; two opt-in checks are excluded from
   that count. This includes actual-engine disguised HLS coverage.
 - Both actual GTK native engines decode an authorized real-provider VOD,
   seek to 30 seconds, pause/resume, change paused Fit/Fill, keep volume muted,
@@ -28,7 +28,7 @@ aperture masking, and bare-picture taps reveal controls through the screen.
 - A separate silent fixture checks alternate audio, actual rendered subtitle
   pixel changes, subtitle removal, volume and picture controls on both engines.
   The final run took 4.7 seconds. Controls must return within 250 ms.
-- Video: 35 focused adapter/compositor checks pass. TV-web: 24 focused UI,
+- Video: 38 focused adapter/compositor checks pass. TV-web: 24 focused UI,
   preference, input and shutdown checks pass. Its production build passes
   strict type checks and design/Core/video integrity.
 - Desktop: 11 native shell tests pass; the real LAN probe is excluded.
@@ -48,3 +48,26 @@ The owning plugin's README and opt-in `real_provider_native_surface_controls`
 test describe reproduction using silent media or private authorized deliveries.
 Source URLs, provider headers, account credentials and media captures stay
 outside Git.
+
+## Native failures and dismissal follow-up
+
+Generic pipeline, video/audio output, source loading and protected-media errors
+are distinguished from explicit decoder/format failures. Unknown pipeline
+errors no longer trigger format conversion or reuse the misleading message
+from older plugin builds. Startup frame timeouts do not establish a codec fault.
+
+Terminal failure stops polling, layout observation and startup watchdogs. Late
+stats cannot revive the failed session. React reports an unresolved error once
+per player session/code/message, so dismissal remains effective. A new attempt
+or different failure can still report an error; retired playback owners cannot
+publish delayed recovery errors into the current UI.
+
+The regression reproduced 13 copies of one error in three seconds before the
+fix. It now verifies a single notification, no further polling and successful
+polling after a new source opens. The late-stats race and misleading legacy
+message also have focused coverage. Nine UI/recovery checks pass, including
+dismissal replay and disposal. Both actual GTK engines report a missing source
+as a source failure, then decode and control valid media in the same engine
+on the local desktop display (4.7 seconds). Real-provider controls also pass
+on that display with both engines (8.5 seconds). These results do not claim
+that every configured provider is available or that every video now plays.

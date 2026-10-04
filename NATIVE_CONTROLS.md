@@ -1,8 +1,8 @@
 # Linux desktop playback controls — 2026-10-03
 
-This adoption pins TV-web `098f4b1364881bff6e7cc496ddefa347bb42127e`, Video
-`9429307450cd7e7d856f57f14272acb9e4566113`, native plugin
-`c41a5037c664135616b0ea60a2715480e2172df2` and Core
+This adoption pins TV-web `d21b83f73e898f4c00073e0f92b95da3a586a4d8`, Video
+`521812a29ff72d4e09ae6ceaf382bc53c5a7bf74`, native plugin
+`4a37b03acfead3a99bd474a173808abcfbc7eaf5` and Core
 `f66c87e13a2c93b6dad3234da9694c57f8530b0a`. The sibling native source archives were
 materialized from the committed pins for the desktop build.
 
@@ -88,3 +88,35 @@ focused React feedback/control checks pass, including 26 slider changes with
 pending IPC and immediate input/knob updates. Audio-device latency is not
 measured by these boundary tests. Strict type checks, vendor integrity and the
 production frontend build pass.
+
+## Desktop playback and pointer follow-up
+
+Source replacement retires the outgoing native presentation before backend
+preparation and restores its saved position on refusal. GTK hides stale sink
+textures and mutes parked audio immediately. Native duration survives temporary
+query failures; buffering comes from media-time ranges and AV queue statistics.
+Compressed AV queues have a bounded 30-second/32-MiB cache, without growing
+decoded-frame queues. Track titles are preserved; unknown languages use
+numbered audio/video/subtitle labels.
+
+Repeated skips accumulate from the requested target and coalesce pending work.
+Backward seek pins no longer release against the pre-seek clock. Native polls
+do not publish transient zero while waiting for the target. Desktop source
+rows show available artwork/monograms, include IPTV providers under All, have
+a smooth 16px radius and 3px best-match border, and omit keyboard legends.
+Native desktop keyboard shortcuts, Tab and spatial/arrival focus are disabled;
+clicked text editing remains. Backdrop clicks reveal rather than hide controls.
+Player controls use crisp vectors with legible skip numbers.
+
+77 focused controller/adapter/compositor tests, 29 focused UI tests and 45
+ordinary native tests pass. Actual GTK GStreamer and MPV seek/pause/resume and
+buffered-time readouts pass against an authorized real provider. Silent media
+checks track/subtitle pixels and picture modes. The trusted HTTPS browser
+fixture was visually inspected for source borders/artwork and player vectors,
+time labels and played/buffered layers. Home scroll p95 was 16.8ms across 49
+Chromium frames, with one 50.1ms maximum frame. This is scoped browser evidence;
+actual GTK/WebKit Home scrolling has not been measured. Offscreen containment
+and frame-bounded card/shelf measurement are implemented.
+
+The owner-approved design exception is pinned in TV-web. Captures and private
+provider data remain outside Git; Android source and pins are unchanged.

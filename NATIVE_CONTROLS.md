@@ -120,3 +120,78 @@ and frame-bounded card/shelf measurement are implemented.
 
 The owner-approved design exception is pinned in TV-web. Captures and private
 provider data remain outside Git; Android source and pins are unchanged.
+
+
+## 2026-10-03 desktop timeline, lifecycle and failure qualification
+
+Pins for this batch: TV `47c6b81d5487fdf1cdb02e464a18edba566fde91`,
+Video `f22a2a6672c01f55c2c777e27a1428bf5e998d88`, native plugin
+`2a282e3461deb37cc7a89f3dc210b8d068a794e0`, design
+`a8b5acac2f810e3d447334e64b7fc3f44c696b4d`. Core remains
+`f66c87e13a2c93b6dad3234da9694c57f8530b0a`.
+
+The original normal local-HTTPS backend admission was exercised through the
+packaged React player and actual GStreamer/MPV IPC. Before any seek, GStreamer
+reported duration 5317.845 s, current time 1.33 s, buffer end 2.33 s and
+`live=true`; the UI displayed duration and a real buffer span. MPV reported
+5317.802 s, current 1.25 s and buffer end 21.15 s with the same visible UI
+behavior. The first OS pointer seek requested 90 s, with native telemetry
+around 89.98 s; no skip action preceded it. Delivery remained direct. These
+facts qualify the tested source/control path, not every provider's frame-accurate
+seeking, codec or platform.
+
+Both player-button and titlebar double-click fullscreen removed chrome, gave
+native video bounds `[0,0,1440,900]`, and restored the windowed presentation.
+The primary host-command path now participates in ownership and releases only
+player-owned fullscreen on leaving playback. Hook regressions also cover
+fallback, pre-existing fullscreen and late completion after leave/unmount.
+
+Additional native React qualification reused the already-authorized private
+VOD delivery with a fixture playback-admission port, and a real loopback HTTP
+407 server. Only the admission/release boundary was substituted; native IPC,
+network fetching, decoding, DOM controls and OS pointer input remained real.
+Do not describe this fixture run as new backend admission or a Lord episode
+reproduction. Both engines kept actual buffer display, pointer seeking,
+fullscreen and bottom controls intact through 960×540, 1000×650 and 1280×720
+resizes, with zero clipping over 158–159 frame samples each. Private captures
+and resize recordings were inspected. Trusted pointer control reveal measured
+14–46 ms. The 407 replacement showed safe GStreamer HTTP-source/resource facts
+or MPV loading-failed/-13 plus HTTP status/body, left duration null/position
+zero and maintained 5/20 renderer frame opportunities during failure. Native
+surface checks separately covered direct/proxied refusals and valid-source
+recovery on both engines, with silent fixtures.
+
+Fast checks: Video typecheck/build and 147 tests; frontend 281 unit tests,
+all seven typecheck groups, integrity checks and production build; three HTTPS
+browser acceptance scenarios for filter return, fullscreen and outage dismissal/
+recovery. Native library: 52 passed, three display-specific tests ignored in
+that command; the HTTP refusal and surface-control checks were then run
+explicitly on GTK with both engines. Six focused diagnostic tests cover actual
+HTTP bodies, timeout, redaction, repeated probes and stale-key reuse. The bus
+regression passes independently after explicit GStreamer initialization.
+
+Measurements used actual WebKitGTK/GTK on an isolated Xvfb/KWin X11 display.
+Home OS-wheel samples moved 0→800 px, with 134–136 frames, p95 17–18 ms, max
+22–32 ms and no frames over 50 ms. This is distinct from Chromium and from the
+ordinary desktop display, which returned no frame samples. Its smoothness is
+still open. The navigation rail had no overflow at the supported minimum size,
+so the reported sidebar scrolling symptom remains open. Exact Lanterns S1E1
+had no local source match; the original Lord endpoint diagnostic GET still
+returned 407 without a proxy challenge. No account/proxy cause is inferred.
+
+Native diagnostics are gated to Linux/Windows with unchanged-error handling on
+unsupported desktop hosts. macOS/Windows compilation and hardware playback
+were not executed here. Android code and pins were not changed. Qualification
+inputs, credentials and captures remain outside Git. The final executable is a
+local Linux debug app built with the Tauri CLI against trusted local HTTPS;
+private scratch QA injection is removed before final packaging.
+
+
+Final packaging checks passed: desktop `npm run check`, `npm run test` and
+`tauri build --debug --no-bundle`, all against the exact archived pins and the
+shared native target with two build jobs. The normal app was launched with no
+private probe/autoplay environment; the binary contains neither private QA
+marker. Fresh exact Lord Lanterns S1E1 discovery completed with zero sources and
+no episode lease file. The original disposable repro auth session was removed
+by its exact ID/hash and its next `/api/auth/me` returned 401. Temporary QA
+services stopped; the local HTTPS backend and normal desktop remain running.

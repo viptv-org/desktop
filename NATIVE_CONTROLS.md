@@ -1,5 +1,53 @@
 # Linux desktop playback controls — 2026-10-03
 
+## 2026-10-04 full application movie and IPTV verification
+
+This follow-up runs the bundled React screens, real `TvApi` discovery and
+playback admission, `PlaybackSessionController`, native IPC and rendered GTK
+surface together. The controller's backend remains the application's API;
+neither playback admission nor decoding is mocked. An opt-in debug-only
+`VIPTV_TEST_SCRIPT` file is evaluated after the main page finishes loading so
+checks can drive the existing app actions and inspect facts. It is absent from
+release builds and inactive in ordinary debug launches.
+
+The original local desktop bundle used `VITE_API_ORIGIN=https://viptv.local.test:8443`.
+A rebuild without that environment setting had reverted to the production
+default. The full-app check caught HTTP 404 for production `/api/v2/streams`,
+`/api/v2/iptv/live/channels` and `/api/v2/iptv/live/:id/source`; production does
+not yet serve this client's newer API. The original local HTTPS target is now
+restored. This is verification against the configured local backend and real
+upstream providers, not a claim of production backend deployment.
+
+`Dune` was discovered in the account catalog and opened from a real IPTV VOD
+producer at 30 seconds, on both MPV and GStreamer. Native clock and frames
+advanced, and private captures were visually inspected in the actual VIPTV
+window. Live `SE: CNN` and `CA CNN` source entries from two configured
+connections also played on both engines with direct live delivery, advancing
+frames and clock, and visible broadcast pictures. The final healthy-source
+full-app run passed all ten checks: one movie and four IPTV source entries on
+each engine. Captures contain app chrome plus actual movie/broadcast imagery;
+they remain private and outside Git.
+
+The broader IPTV sample intentionally includes unavailable sources. On each
+engine, four of ten entries played; four CNN Espanol entries timed out before
+the first frame, and two entries returned JSON indicating an expired upstream
+account with HTTP 200. Independent authenticated delivery probes confirmed
+the four timeout entries supplied no data within twenty seconds and the two
+expired entries returned non-media JSON. These sources are still unavailable;
+they are not counted as successful player checks or silently replaced.
+
+The first native movie batch had twenty rejected premature MPV resume seeks.
+When the diagnostic harness continued despite that command error, six movies
+completed decode/control checks; fourteen had source-loading/format or later
+control failures. Subsequent tests separated those source failures from the
+startup bug. The later playable corpus initially had five GStreamer graphics
+failures; all twenty native surfaces passed after the graphics fix.
+
+When rebuilding this local app, preserve the explicit API origin:
+`VITE_API_ORIGIN=https://viptv.local.test:8443 npm run build -- --debug --no-bundle`.
+The production build default is unchanged. The completed checks retain the
+existing user session and restore the original engine preference afterward.
+
 This adoption pins TV-web `d21b83f73e898f4c00073e0f92b95da3a586a4d8`, Video
 `521812a29ff72d4e09ae6ceaf382bc53c5a7bf74`, native plugin
 `4a37b03acfead3a99bd474a173808abcfbc7eaf5` and Core

@@ -72,7 +72,7 @@ pub fn run() {
             }
         }
     }
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .manage(ShutdownState::default())
         .on_window_event(|window, event| {
             if window.label() != "main" {
@@ -108,7 +108,25 @@ pub fn run() {
             smartcast::smartcast_cancel,
             smartcast::smartcast_forget,
             smartcast_discover::smartcast_discover
-        ])
+        ]);
+    // Explicit developer-only full-app checks run against the bundled UI and
+    // its real API/controller. The renderer cannot choose a script; only the
+    // launching process can supply a local file. Release builds omit this.
+    #[cfg(debug_assertions)]
+    let builder = if let Some(script) =
+        std::env::var_os("VIPTV_TEST_SCRIPT").and_then(|path| std::fs::read_to_string(path).ok())
+    {
+        builder.on_page_load(move |webview, payload| {
+            if webview.label() == "main"
+                && matches!(payload.event(), tauri::webview::PageLoadEvent::Finished)
+            {
+                let _ = webview.eval(&script);
+            }
+        })
+    } else {
+        builder
+    };
+    builder
         .run(tauri::generate_context!())
         .expect("error while running the VIPTV desktop app");
 }

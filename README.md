@@ -47,6 +47,14 @@ npm run check      # cargo check inside src-tauri
 npm run test       # cargo test inside src-tauri
 ```
 
+Debug builds accept `VIPTV_TEST_SCRIPT=/absolute/path/to/check.js` for full-app
+checks after the bundled main page loads. The script drives the existing UI
+actions/API and can report safe facts through `test_log`; ordinary launches
+leave it unset, and release builds omit the hook. Keep credentials and captures
+private. Local packaged builds must explicitly retain
+`VITE_API_ORIGIN=https://viptv.local.test:8443`. See `NATIVE_CONTROLS.md` for
+actual movie/IPTV evidence and remaining unavailable sources.
+
 ## License
 
 Copyright (C) 2026 viptv contributors.

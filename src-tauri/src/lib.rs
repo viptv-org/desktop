@@ -12,6 +12,8 @@
 mod appimage_runtime;
 mod shutdown;
 mod smartcast_discover;
+mod torrent_runtime;
+mod torrent_worker;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{Emitter, Manager};
 use tauri_plugin_video::VideoExt;
@@ -40,6 +42,7 @@ fn begin_shutdown(app: tauri::AppHandle) {
         )
         .await;
         tauri::async_runtime::spawn_blocking(move || {
+            let _ = app.state::<torrent_runtime::RuntimeState>().shutdown();
             if app.video().shutdown_native().is_err() {
                 eprintln!("Native playback cleanup could not finish during shutdown.");
             }
@@ -74,6 +77,7 @@ pub fn run() {
     }
     let builder = tauri::Builder::default()
         .manage(ShutdownState::default())
+        .manage(torrent_runtime::RuntimeState::default())
         .on_window_event(|window, event| {
             if window.label() != "main" {
                 return;
@@ -94,6 +98,9 @@ pub fn run() {
         // serialize on it while discovery stays lock-free.
         .manage(smartcast::SmartCastState::default())
         .invoke_handler(tauri::generate_handler![
+            torrent_runtime::torrent_runtime_available,
+            torrent_runtime::torrent_runtime_clock,
+            torrent_runtime::torrent_runtime_call,
             test_autoplay_enabled,
             playback_engine_override,
             test_log,

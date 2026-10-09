@@ -45,3 +45,10 @@ resources extracted; every worker/dependency notice matched the imported hash
 manifest and shared source revision. This establishes packaged bytes, not
 Windows TextureStream presentation. A direct worker-artifact test now also
 requires startup, definitive input refusal and owned settlement on Linux/Windows.
+
+[Installer run 37996307698](https://github.com/viptv-org/desktop/actions/runs/37996307698)
+also passed on both platforms at `649a1d0`. The Windows release suite now includes
+actual pinned Go worker startup, invalid-input refusal without losing the warm
+worker, and owned shutdown/reaping; seven tests pass, one LAN test is ignored.
+This proves Windows runtime loading/control and packaging, not TextureStream
+presentation on a physical Windows system.

@@ -27,8 +27,9 @@ and native decoding IPC; backend account/source-screen admission was not part
 of this harness. They do not establish public-swarm reliability or comparative
 speed. MPV also opened retained cache in 0.411 seconds, but two forward-seek
 checks failed to produce the required subsequent rendered frames within
-60 seconds. MPV seek reliability remains under investigation; it is not counted
-as a qualified seek result.
+60 seconds. A subsequent MPV trial rendered frames at the requested position after
+20.4 seconds. The earlier timeouts remain recorded; one later success does not
+establish consistent seek reliability.
 
 Performance is accepted for this integration phase. Track cold acquisition,
 seek delay and MPV seek reliability in the gateway's

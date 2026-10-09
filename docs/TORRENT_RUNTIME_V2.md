@@ -52,3 +52,8 @@ actual pinned Go worker startup, invalid-input refusal without losing the warm
 worker, and owned shutdown/reaping; seven tests pass, one LAN test is ignored.
 This proves Windows runtime loading/control and packaging, not TextureStream
 presentation on a physical Windows system.
+
+The worker pin includes durable resolved-file/archive selections with restart
+revalidation and shared bounded accounting. The Linux actual-worker control
+check passes for this revision. Both OS binaries and all Android ABIs come from
+one clean Go source revision; physical Windows presentation remains separate.

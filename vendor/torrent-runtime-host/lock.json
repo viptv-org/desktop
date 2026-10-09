@@ -1,0 +1,9 @@
+{
+  "repository": "viptv-org/playback-gateway",
+  "revision": "c81044ac734caa888b9f398adfd24efba97eda2d",
+  "files": {
+    "Cargo.toml": "196f0b5971394307c4fe95211f5cfd637c083974f92c74c7f05c8c09d2cf50b1",
+    "LICENSE": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+    "src/lib.rs": "ef885c24be3290c7f24196323d270ab119f077d1b99411d0b67b472a545ac6f5"
+  }
+}

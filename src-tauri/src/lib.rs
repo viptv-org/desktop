@@ -13,7 +13,6 @@ mod appimage_runtime;
 mod shutdown;
 mod smartcast_discover;
 mod torrent_runtime;
-mod torrent_worker;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{Emitter, Manager};
 use tauri_plugin_video::VideoExt;

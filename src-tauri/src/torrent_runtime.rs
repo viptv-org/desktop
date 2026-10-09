@@ -1,5 +1,4 @@
 //! Native platform effects for the shared runtime. Private control never enters app state.
-use crate::torrent_worker::{Worker, WorkerError};
 use serde_json::{json, Value};
 use std::{
     path::PathBuf,
@@ -7,6 +6,7 @@ use std::{
     time::Duration,
 };
 use tauri::Manager;
+use torrent_runtime_host::{Worker, WorkerError};
 
 #[derive(Default)]
 pub struct RuntimeState(Arc<Mutex<State>>);

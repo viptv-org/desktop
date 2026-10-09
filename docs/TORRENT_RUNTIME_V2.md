@@ -57,3 +57,11 @@ The worker pin includes durable resolved-file/archive selections with restart
 revalidation and shared bounded accounting. The Linux actual-worker control
 check passes for this revision. Both OS binaries and all Android ABIs come from
 one clean Go source revision; physical Windows presentation remains separate.
+
+[Installer run 38003799432](https://github.com/viptv-org/desktop/actions/runs/38003799432)
+passed on Ubuntu 24.04 and Windows 2022 at `59f85e2`, including the durable-selection
+worker revision shared with Android and gateway. The Windows release suite passed
+seven tests with one LAN fixture ignored; the actual pinned worker loading,
+invalid-input refusal and joined shutdown check ran. Linux DEB/AppImage and
+Windows NSIS artifacts were uploaded with checksums. These are build/control
+results; Windows TextureStream presentation remains unverified.

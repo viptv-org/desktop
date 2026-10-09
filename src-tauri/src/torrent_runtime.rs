@@ -260,3 +260,48 @@ fn execute(
     }
     Ok(reply.to_string())
 }
+
+#[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
+mod worker_artifact_tests {
+    use super::*;
+    #[test]
+    fn pinned_worker_opens_private_control_and_settles_without_a_swarm() {
+        let name = if cfg!(windows) {
+            "torrent-worker.exe"
+        } else {
+            "torrent-worker"
+        };
+        let executable = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../vendor/torrent-runtime")
+            .join(name);
+        let suffix = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let cache = std::env::temp_dir().join(format!(
+            "viptv-runtime-artifact-{}-{suffix}",
+            std::process::id()
+        ));
+        std::fs::create_dir(&cache).unwrap();
+        let worker = Worker::start(&executable, &cache, 64 << 20)
+            .expect("pinned runtime must load and accept open");
+        let reply = worker
+            .call(
+                json!({"op":"prepare","source":{"magnet":"invalid"},"authority_ms":60000}),
+                Duration::from_secs(3),
+            )
+            .unwrap();
+        assert_eq!(reply["version"], 2);
+        assert_eq!(reply["ok"], false);
+        assert!(
+            worker.is_alive(),
+            "definitive input refusal must leave the warm worker usable"
+        );
+        worker
+            .shutdown()
+            .expect("owned runtime must settle or be terminated and reaped");
+        assert!(!worker.is_alive());
+        drop(worker);
+        std::fs::remove_dir_all(cache).unwrap();
+    }
+}

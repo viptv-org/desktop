@@ -93,7 +93,7 @@ jobs:
           assert files,'No desktop installers produced'
           for file in files: shutil.copy2(file,output/file.name)
           (output/'SHA256SUMS').write_text(''.join(hashlib.sha256(f.read_bytes()).hexdigest()+'  '+f.name+'\n' for f in files))
-          (output/'build.json').write_text(json.dumps({'revision':os.environ['BUILD_SHA'],'platform':os.environ['BUILD_PLATFORM'],'native':json.loads(pathlib.Path('NATIVE_REFS.json').read_text())}))
+          (output/'build.json').write_text(json.dumps({'revision':os.environ['BUILD_SHA'],'platform':os.environ['BUILD_PLATFORM'],'native':json.loads(pathlib.Path('NATIVE_REFS.json').read_text()),'torrent_runtime':pathlib.Path('TORRENT_RUNTIME_REF').read_text().strip(),'runtime_host':pathlib.Path('RUNTIME_HOST_REF').read_text().strip()}))
           PY
       - uses: actions/upload-artifact@v4
         with:

@@ -34,3 +34,14 @@ establish consistent seek reliability.
 Performance is accepted for this integration phase. Track cold acquisition,
 seek delay and MPV seek reliability in the gateway's
 `docs/TORRENT_PERFORMANCE_FOLLOWUP.md`; no faster-than-Stremio claim is made.
+
+## Installer qualification, 2026-10-09
+
+[Installer run 37987042834](https://github.com/viptv-org/desktop/actions/runs/37987042834)
+passed on Windows 2022 and Ubuntu 24.04 at desktop revision `6c01dd6`.
+The Windows release native suite passed six tests (one LAN fixture ignored).
+The NSIS installer was downloaded, checksum-verified and its torrent-runtime
+resources extracted; every worker/dependency notice matched the imported hash
+manifest and shared source revision. This establishes packaged bytes, not
+Windows TextureStream presentation. A direct worker-artifact test now also
+requires startup, definitive input refusal and owned settlement on Linux/Windows.

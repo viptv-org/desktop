@@ -117,3 +117,25 @@ it does not navigate ordinary login/catalog screens. It establishes the complete
 desktop authority/transport/decoder/renewal boundary for one privately recorded
 source. Earlier slow/failed seeks remain evidence; this run is not a matched
 engine comparison or general public-swarm reliability claim.
+
+## Windows transport qualification
+
+[Run 38015306679](https://github.com/viptv-org/desktop/actions/runs/38015306679)
+passed both Linux and Windows installers at `372c585`, including the native
+heartbeat correction. The later workflow-only revisions retain the same UI/core,
+production worker and native plugin pins.
+
+[Run 38016897210](https://github.com/viptv-org/desktop/actions/runs/38016897210)
+also passed the pinned runtime's race-enabled test executable on Windows 2022.
+Forty-five top-level tests passed, including real rolling Range reads/seeks,
+tracker/DHT/uTP discovery, slow/corrupt/dropped-handshake peers, completion
+invalidation, killed-process cache reuse, independent authority, stored archives,
+durable selection and bounded worker settlement. The source and test contents
+are pinned to `c7bb3f1` independently of this desktop workflow revision.
+
+Two setup attempts failed before executing fixtures: the desktop workflow token
+could not read the private gateway repo, then PowerShell split an unquoted Go
+test flag. A verified compiled capsule and literal quoted arguments corrected
+those runner defects; neither attempt is recorded as a torrent engine failure.
+The checks use owned fixtures and do not install/launch the product. Windows
+TextureStream presentation on a real player host remains separately unverified.

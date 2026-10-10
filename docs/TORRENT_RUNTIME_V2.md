@@ -65,3 +65,9 @@ seven tests with one LAN fixture ignored; the actual pinned worker loading,
 invalid-input refusal and joined shutdown check ran. Linux DEB/AppImage and
 Windows NSIS artifacts were uploaded with checksums. These are build/control
 results; Windows TextureStream presentation remains unverified.
+
+The current UI pin is `bc88f2f` with core `0f3d9f7`, matching Android/backend.
+Native torrents still acknowledge the local worker from presented-frame facts;
+gateway web/Roku acknowledgement stays separate. Local Rust checks/tests and
+the native-origin frontend build pass after adoption. The Go worker and host
+source revisions are unchanged.

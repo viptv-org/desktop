@@ -7,6 +7,15 @@ Artifact builds do not install or launch the VIPTV client and cannot exercise
 its default backend origin. Pinned frontend integrity and release native unit
 tests remain; runtime SDK installation/probing is not a VIPTV client launch.
 
+The same workflow also runs the shared runtime's race-enabled Go fixtures on
+Windows, checking out `TORRENT_RUNTIME_REF` rather than a gateway branch head.
+Its owned peers/data exercise verified storage, eviction, seeking, authority,
+cancellation and killed-process recovery. It uses no account or public source
+and does not launch the product. The `runtime_qualification_only` manual option
+skips installer compilation when only these checks are needed. JSON test results
+are retained as a separate artifact. This does not qualify WebView2 TextureStream
+presentation or a physical Windows graphics/decoder stack.
+
 The workflow checks out the committed `tv` submodule and `NATIVE_REFS.json`
 revisions. Do not replace those pins with branch heads. The local sibling
 workspace must contain compatible core and tauri-video-plugin checkouts.

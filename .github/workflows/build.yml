@@ -3,13 +3,77 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      runtime_qualification_only:
+        description: Run the pinned Windows torrent tests without rebuilding installers
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
-  group: desktop-build-${{ github.ref }}
+  group: desktop-build-${{ github.ref }}-${{ inputs.runtime_qualification_only && 'runtime' || 'installers' }}
   cancel-in-progress: false
 jobs:
+  windows-torrent-runtime:
+    name: Pinned Windows torrent runtime qualification
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - name: Preserve pinned source bytes
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+        with:
+          path: desktop-pin
+      - name: Read the immutable runtime revision
+        id: runtime
+        shell: pwsh
+        run: |
+          $revision = (Get-Content desktop-pin/TORRENT_RUNTIME_REF -Raw).Trim()
+          if ($revision -notmatch '^[a-f0-9]{40}$') { throw 'Invalid torrent runtime revision' }
+          "revision=$revision" >> $env:GITHUB_OUTPUT
+      - uses: actions/checkout@v4
+        with:
+          repository: viptv-org/playback-gateway
+          ref: ${{ steps.runtime.outputs.revision }}
+          path: runtime-qualification
+          sparse-checkout: |
+            torrent-runtime
+            engine/assets
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.2'
+          cache-dependency-path: runtime-qualification/torrent-runtime/go.sum
+      - uses: msys2/setup-msys2@v2
+        id: compiler
+        with:
+          msystem: UCRT64
+          update: true
+          install: mingw-w64-ucrt-x86_64-gcc
+      - name: Test actual Windows storage, peers and process recovery
+        shell: pwsh
+        working-directory: runtime-qualification/torrent-runtime
+        env:
+          MSYS2_LOCATION: ${{ steps.compiler.outputs.msys2-location }}
+          GOMAXPROCS: '2'
+          CGO_ENABLED: '1'
+        run: |
+          $compiler = Join-Path $env:MSYS2_LOCATION 'ucrt64/bin'
+          $env:PATH = "$compiler;$env:PATH"
+          $env:CC = Join-Path $compiler 'gcc.exe'
+          $env:CXX = Join-Path $compiler 'g++.exe'
+          go test -race -p 1 -timeout 90s -json ./... > runtime-tests.jsonl
+          $result = $LASTEXITCODE
+          Get-Content runtime-tests.jsonl
+          if ($result -ne 0) { throw "Windows torrent runtime tests failed: $result" }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-torrent-qualification-${{ github.sha }}
+          path: runtime-qualification/torrent-runtime/runtime-tests.jsonl
+          if-no-files-found: warn
+          retention-days: 30
   installer:
+    if: ${{ !inputs.runtime_qualification_only }}
     strategy:
       fail-fast: false
       matrix:

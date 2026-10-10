@@ -92,3 +92,28 @@ HTTPS API origin and reopened against the same isolated account data.
 The HTTP correction does not qualify the separately recorded slow native seeks
 or prove consistent public-swarm seek recovery. Earlier direct worker/decoder
 probes bypassed this backend heartbeat boundary; this regression retains it.
+
+## Authenticated native playback and renewal qualification
+
+The pinned TvApi, actual core WASM, production Tauri HTTP adapter, native
+runtime port and GStreamer controller passed an isolated real-media run against
+an ephemeral backend account/profile/encrypted add-on. A trusted HTTPS endpoint
+served the actual backend router. The installed debug shell ran in its own Xvfb
+display and private data/cache directories; the owner's manual app was untouched.
+Admission was asserted native and used its token-protected loopback worker URL.
+
+First rendered frames took 15.90 s in this single fresh-cache observation.
+Two automatic bodyless heartbeats succeeded while playing. A forward seek to
+120 s required 3.95 s and a backward seek to 5 s required 0.77 s; both required
+new rendered frames after position landing. Stop retired the API's native owner.
+A new authorized start at 120 s rendered and acknowledged frames, then passed
+another automatic heartbeat. Its 20.16 s observation includes waiting for that
+heartbeat and is not a resume first-frame measurement. All three renewals
+returned 200, with no refusal, and both starts acknowledged actual frames.
+Owned app/worker/backend/gateway/HTTPS/display processes were stopped afterward.
+
+This check drives production API/controller modules through a debug-only script;
+it does not navigate ordinary login/catalog screens. It establishes the complete
+desktop authority/transport/decoder/renewal boundary for one privately recorded
+source. Earlier slow/failed seeks remain evidence; this run is not a matched
+engine comparison or general public-swarm reliability claim.

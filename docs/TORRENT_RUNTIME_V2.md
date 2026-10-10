@@ -66,8 +66,29 @@ invalid-input refusal and joined shutdown check ran. Linux DEB/AppImage and
 Windows NSIS artifacts were uploaded with checksums. These are build/control
 results; Windows TextureStream presentation remains unverified.
 
-The current UI pin is `bc88f2f` with core `0f3d9f7`, matching Android/backend.
+The current UI pin is `11329bd` with core `0f3d9f7`, matching Android/backend.
 Native torrents still acknowledge the local worker from presented-frame facts;
 gateway web/Roku acknowledgement stays separate. Local Rust checks/tests and
 the native-origin frontend build pass after adoption. The Go worker and host
 source revisions are unchanged.
+
+## Native heartbeat correction
+
+Manual desktop playback exposed a control serialization mismatch: native
+heartbeats sent `{}`, but the backend's native renewal contract is bodyless.
+The backend returned `invalid_playback_request` (HTTP 400) about twenty seconds
+after admission, causing playback to stop even without a seek. Recorded starts
+were admitted at zero; a saved-position refusal was not the observed cause.
+
+TV-web `11329bd` fixes the private native HTTP adapter to omit the heartbeat body
+and content type. Ordinary gateway renewal retains its existing JSON request.
+Two regression cases exercise the real TvApi, actual WASM authority and HTTP
+serialization for zero-position and resumed playback. Both reproduced the exact
+400 before the fix and pass afterward. All 304 frontend tests, the production
+build, five trusted-HTTPS UI cases and the real backend native-platform renewal
+test pass. The local desktop debug bundle was rebuilt with the explicit local
+HTTPS API origin and reopened against the same isolated account data.
+
+The HTTP correction does not qualify the separately recorded slow native seeks
+or prove consistent public-swarm seek recovery. Earlier direct worker/decoder
+probes bypassed this backend heartbeat boundary; this regression retains it.

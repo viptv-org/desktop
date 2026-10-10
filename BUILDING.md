@@ -8,13 +8,20 @@ its default backend origin. Pinned frontend integrity and release native unit
 tests remain; runtime SDK installation/probing is not a VIPTV client launch.
 
 The same workflow also runs the shared runtime's race-enabled Go fixtures on
-Windows, checking out `TORRENT_RUNTIME_REF` rather than a gateway branch head.
+Windows, using a checksummed test executable built from `TORRENT_RUNTIME_REF`.
 Its owned peers/data exercise verified storage, eviction, seeking, authority,
 cancellation and killed-process recovery. It uses no account or public source
 and does not launch the product. The `runtime_qualification_only` manual option
-skips installer compilation when only these checks are needed. JSON test results
+skips installer compilation when only these checks are needed. Controlled test results
 are retained as a separate artifact. This does not qualify WebView2 TextureStream
 presentation or a physical Windows graphics/decoder stack.
+
+The gateway owns `torrent-runtime/scripts/build-windows-qualification.py`, which
+archives a committed source revision before building the race-enabled test
+executable. Its capsule contains original fixtures and dependency notices, with
+individual content hashes. The desktop job verifies both the capsule and source
+pin before extraction. It requires no access token for the private gateway repo
+and contains no provider corpus, account data or runtime source copy.
 
 The workflow checks out the committed `tv` submodule and `NATIVE_REFS.json`
 revisions. Do not replace those pins with branch heads. The local sibling

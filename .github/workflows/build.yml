@@ -24,52 +24,26 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: desktop-pin
-      - name: Read the immutable runtime revision
-        id: runtime
+      - name: Verify and unpack the immutable runtime qualification
         shell: pwsh
         run: |
-          $revision = (Get-Content desktop-pin/TORRENT_RUNTIME_REF -Raw).Trim()
-          if ($revision -notmatch '^[a-f0-9]{40}$') { throw 'Invalid torrent runtime revision' }
-          "revision=$revision" >> $env:GITHUB_OUTPUT
-      - uses: actions/checkout@v4
-        with:
-          repository: viptv-org/playback-gateway
-          ref: ${{ steps.runtime.outputs.revision }}
-          path: runtime-qualification
-          sparse-checkout: |
-            torrent-runtime
-            engine/assets
-      - uses: actions/setup-go@v7
-        with:
-          go-version: '1.27.2'
-          cache-dependency-path: runtime-qualification/torrent-runtime/go.sum
-      - uses: msys2/setup-msys2@v2
-        id: compiler
-        with:
-          msystem: UCRT64
-          update: true
-          install: mingw-w64-ucrt-x86_64-gcc
+          python desktop-pin/scripts/torrent-runtime-qualification.py --extract runtime-qualification
+          if ($LASTEXITCODE -ne 0) { throw 'Windows qualification capsule verification failed' }
       - name: Test actual Windows storage, peers and process recovery
         shell: pwsh
         working-directory: runtime-qualification/torrent-runtime
         env:
-          MSYS2_LOCATION: ${{ steps.compiler.outputs.msys2-location }}
           GOMAXPROCS: '2'
-          CGO_ENABLED: '1'
         run: |
-          $compiler = Join-Path $env:MSYS2_LOCATION 'ucrt64/bin'
-          $env:PATH = "$compiler;$env:PATH"
-          $env:CC = Join-Path $compiler 'gcc.exe'
-          $env:CXX = Join-Path $compiler 'g++.exe'
-          go test -race -p 1 -timeout 90s -json ./... > runtime-tests.jsonl
+          & './torrent-runtime.test.exe' -test.v -test.timeout=90s > runtime-tests.log
           $result = $LASTEXITCODE
-          Get-Content runtime-tests.jsonl
+          Get-Content runtime-tests.log
           if ($result -ne 0) { throw "Windows torrent runtime tests failed: $result" }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: windows-torrent-qualification-${{ github.sha }}
-          path: runtime-qualification/torrent-runtime/runtime-tests.jsonl
+          path: runtime-qualification/torrent-runtime/runtime-tests.log
           if-no-files-found: warn
           retention-days: 30
   installer:

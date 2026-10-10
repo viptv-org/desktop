@@ -35,7 +35,7 @@ jobs:
         env:
           GOMAXPROCS: '2'
         run: |
-          & './torrent-runtime.test.exe' -test.v -test.timeout=90s > runtime-tests.log
+          & './torrent-runtime.test.exe' '-test.v' '-test.timeout=90s' > runtime-tests.log
           $result = $LASTEXITCODE
           Get-Content runtime-tests.log
           if ($result -ne 0) { throw "Windows torrent runtime tests failed: $result" }

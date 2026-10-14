@@ -1,76 +1,13 @@
-# VIPTV Desktop Client
+# Historical Tauri desktop host
 
-[Installer build instructions](BUILDING.md). Actions delivery: main pushes and manual builds produce sideloading artifacts
-(Android universal APK; desktop Windows/Linux installers; Roku ZIP; TV WGT/IPK).
-Other repositories have no Actions workflows. Local checks remain; previous
-CI/release-publication descriptions below are historical. No automatic deploys.
+The experimental branch retires the previous tauri desktop host.
+Active Android, Android TV, Windows, Linux, macOS and ordinary web clients now
+belong to [the KMP application repository](https://github.com/viptv-org/app/tree/experiment/kmp-v2).
+Native clients support the local Rust/SQLite engine and remote servers; web
+requires a backend. TV-web and Roku remain separate remote clients.
 
-The native Tauri v2 application for VIPTV on Linux, Windows, and macOS.
-
-The desktop client provides:
-- Native GStreamer / MPV / system video decoding via the sibling [`tauri-video-plugin`](../tauri-video-plugin) repository.
-- Frameless custom titlebar with Wayland & X11 edge-resize handles (frontend components in the `tv` submodule, `tv/src/ui/DesktopTitlebar.tsx` and `tv/src/ui/WindowResizeBorders.tsx`) backed by native minimize, maximize, fullscreen and window-dragging commands in `src-tauri/src/lib.rs`.
-- The shared viewing UI from the pinned [`tv`](tv) submodule of [`tv-web`](../tv-web), loaded via Vite during dev (`http://localhost:5173`) and bundled from `tv/dist` in release builds. The gitlink is the promotion step: check out the reviewed tv-web commit in the submodule, commit the gitlink, and build — mirroring the backend's `tv` submodule discipline. A sibling `../tv-web` checkout remains useful for active development; release builds always consume the pin.
-- Native HTTP networking via `@tauri-apps/plugin-http` with system CA trust integration (`rustls-tls-native-roots`).
-
-## Prerequisites
-
-- **Rust 1.85+** (`rustc --version`, `cargo --version`).
-- **Node.js LTS (20+)** and npm.
-- **Linux (Debian/Ubuntu)**:
-  ```sh
-  sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
-    gstreamer1.0-dev gstreamer1.0-plugins-{base,good,bad,ugly} libmpv-dev
-  ```
-- **Windows**: WebView2 and GStreamer runtime (see `../tauri-video-plugin/docs/windows.md`).
-- **Workspace layout**: The crate references `../tauri-video-plugin` and the `tv` submodule as path dependencies, so this repository builds inside the canonical `viptv-org` workspace.
-
-## Quick Start
-
-From this directory:
-
-```sh
-npm install
-npm run dev        # Starts tv-web Vite server & launches Tauri desktop window with hot reload
-```
-
-## Release Build
-
-```sh
-npm run build      # Builds tv-web production bundle and packages the native desktop executable
-```
-
-## Rust Checks
-
-```sh
-npm run check      # cargo check inside src-tauri
-npm run test       # cargo test inside src-tauri
-```
-
-Debug builds accept `VIPTV_TEST_SCRIPT=/absolute/path/to/check.js` for full-app
-checks after the bundled main page loads. The script drives the existing UI
-actions/API and can report safe facts through `test_log`; ordinary launches
-leave it unset, and release builds omit the hook. Keep credentials and captures
-private. Local packaged builds must explicitly retain
-`VITE_API_ORIGIN=https://viptv.local.test:8443`. See `NATIVE_CONTROLS.md` for
-actual movie/IPTV evidence and remaining unavailable sources.
-
-## License
-
-Copyright (C) 2026 viptv contributors.
-
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2 of the License. See [LICENSE](LICENSE). The playback adapters (`viptv-org/video`, `viptv-org/tauri-video-plugin`) and the Android repository remain under their existing MIT OR Apache-2.0 terms.
-
-## Reconciled dependencies
-
-The `tv` gitlink pins the reconciled viewing client: React for this desktop
-shell, SolidTV for hosted TV URLs. `NATIVE_REFS.json` pins the sibling Rust core
-and video plugin revisions; CI checks out those exact commits. Update these
-pins together with the UI instead of building from unrelated branch tips.
-
-BE-002 adoption removes the unused anonymous provider feature from the native
-Core-Tauri dependency and imports its regenerated Core/WASM alongside the reviewed
-TV gitlink. Native authenticated playback, actual decoder constraints, SmartCast
-LAN networking and credential vaults remain. No historical local-addon records
-are imported into accounts or deleted. See LOCAL_RETIREMENT.md for exact pins and
-host-build evidence; installed/hardware and Windows qualification remain separate.
+This branch contains only the retirement record and original root licenses.
+The previous implementation is available at
+[source revision `c682f8e22afa`](https://github.com/viptv-org/desktop/tree/c682f8e22afa429fa5395a5cec4a2d7c45ae65c4).
+Repository history, the main branch and local historical files are preserved.
+No executable or build workflow from this branch participates in the KMP app.

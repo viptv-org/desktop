@@ -310,3 +310,49 @@ formatting and embedded root-base frontend checks pass.
 This establishes this host's actual package startup, transport/progress and
 close path. Native pixels, playing-overlay stability, matched Fit/Fill/resize
 and MPV Info/seek remain separate pending interaction/capture checks.
+
+# Linux public-action and gateway qualification, 2026-10-02
+
+The following runtime checks used the local HTTPS AppImage above (desktop
+`0e044ed`, TV-web `ea17334`, Core `f66c87e`, native plugin `d80d071`).
+They are actual native application actions through Linux accessibility, with
+fresh synthetic accounts, profiles and generated silent media. They do not
+establish physical keyboard/pointer behavior or visible compositor stability.
+
+| Scenario | Status and scope |
+|---|---|
+| Cold pairing/profile | PASS: the actual pending device code was approved using the seeded browser principal; the app polled a new UUID device grant, authenticated and selected its owned profile. This does not qualify a human browser login. |
+| Home/Title/source picker | PASS: actual catalog, title metadata, two source choices, source selection and scoped cancellation. |
+| My List/item menu | PASS: add/remove persisted, the scoped hold menu opened/cancelled, Choose Source worked and Mark Watched removed the continuation row. |
+| Continue watching | PASS: queue/See All and item selection; initial Resume position is tracked separately below because the earlier source started at zero. |
+| Back | PASS: native playback released its lease with DELETE 200 and returned to the source chooser; cancelling the chooser returned to Title/Home. |
+| Discover/Live TV | PASS: actual catalog selection and empty-guide loading; empty synthetic guide does not qualify live media playback. |
+| Settings/profile | PASS: Appearance, Playback, Addons and About; owned profile audio/engine preferences were changed and restored. Edit/Add Profile opened and cancelled; an avatar selection persisted. Profile name creation/deletion was NOT RUN because text input was unavailable and the fixture had one owned profile. |
+| Window operations | PASS: public Maximize/Restore, exact-owned KWin fullscreen at 1920 by 1080 and resize at 1200 by 800. These are functional operations, not paused Fit/Fill or clipping pixel assertions. |
+| Next, queue ordering, episode autoplay, track selection, history | NOT RUN: movie-only fixture and unavailable hidden player controls. Browser and Android checks are separate evidence. |
+| Live player controls/Fit-Fill/MPV Info | NOT RUN for the fresh AppImage: cached, wrong-window and black captures were excluded. Earlier direct-native engine/seek results remain scoped to their recorded source. |
+
+The actual packaged torrent-to-gateway HLS repeat admitted a source and
+advanced native progress from 13.715 to 28.766 seconds (duration 120.021).
+The real backend observed one create 202, three ready-HLS 200 responses, two
+renewal 200 responses and one explicit DELETE 200. The gateway served 32
+playlist and 99 segment responses with 200, then released its remote viewer
+with 204. Capacities returned to 2/2/4; the peer transferred 4,014,640 bytes
+in 19,909 milliseconds. Cache reaping, peer retirement and owned service
+shutdown completed; the runner and AppImage exited zero, owned audio was gone
+and all fixture listeners closed. The earlier deadline-expired run is excluded
+from this lifecycle result. Native managed-HLS seek remains unverified.
+
+The current TV-web pin `c797ad0` imports the reviewed initial-Resume correction
+from Video `2038`: VOD resume uses the requested media kind instead of an
+initial, undecided native live flag. Its root-base frontend build, imported
+design/Core/video integrity and types passed. A source-matched actual
+Resume replay is pending; this new source has no fresh installer claim.
+
+The reported live bottom-controls/sidebar flicker remains OPEN. A private
+scratch debug observer found stable held overlay nodes/rectangles and actual
+advancing decoded frame counts, but exact-window captures of both Home and
+playback were black. An app-local WebKit Always-to-Never comparison read back
+the effective setting; it is diagnostic only and has no verified visible
+outcome. Temporary observer and policy wiring are excluded from product
+source and must be removed before final packaging.
